@@ -1,0 +1,33 @@
+name: "Minimal Provider"
+version: "1.0.0"
+slug: "minimal-provider"
+description: "Example provider that generates dummy OHLCV data for testing"
+
+image: "timebase/minimal-provider:latest"
+arch:
+  - amd64
+  - arm64
+
+capabilities:
+  historical_data: true
+  real_time_streaming: false
+  backfill: true
+
+data_types:
+  - stocks
+
+intervals:
+  - 1d
+
+rate_limits:
+  requests_per_minute: 1000
+  requests_per_day: 100000
+
+options:
+  base_price:
+    type: float
+    description: "Base price for generated data"
+    default: 100.0
+    required: false
+
+host_network: false

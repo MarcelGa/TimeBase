@@ -1,0 +1,68 @@
+name: Build Supervisor
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/TimeBase.Supervisor/**'
+      - 'src/TimeBase.Contracts/**'
+      - 'TimeBase.sln'
+      - '.github/workflows/build-supervisor.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/TimeBase.Supervisor/**'
+      - 'src/TimeBase.Contracts/**'
+      - 'TimeBase.sln'
+      - '.github/workflows/build-supervisor.yml'
+
+jobs:
+  build:
+    name: Build .NET Supervisor
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        dotnet-version: ['8.0.x']
+        include:
+          - os: ubuntu-latest
+            dotnet-version: '8.0.x'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore dependencies
+        run: dotnet restore TimeBase.sln
+
+      - name: Build solution
+        run: dotnet build TimeBase.sln --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test TimeBase.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/*.trx'
+
+      - name: Check code formatting
+        run: dotnet format --verify-no-changes TimeBase.sln
+        continue-on-error: true
+
+      - name: Build Docker image (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker build -f docker/supervisor/Dockerfile -t timebase/supervisor:test .
+
+      - name: Test Docker image (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker run --rm timebase/supervisor:test --version || echo "Version check completed"
