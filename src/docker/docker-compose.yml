@@ -86,8 +86,8 @@ services:
   # TimeBase core service
   core:
     build:
-      context: ..
-      dockerfile: docker/core/Dockerfile
+      context: ../..
+      dockerfile: src/docker/core/Dockerfile
     container_name: timebase-core
     ports:
       - "8080:8080"   # REST API
@@ -106,7 +106,7 @@ services:
       OpenTelemetry__Tracing__OtlpEndpoint: http://jaeger:4317
       OpenTelemetry__Metrics__OtlpEndpoint: http://jaeger:4317
     volumes:
-      - ../providers:/data/providers:ro  # Mount providers for development
+      - ../../providers:/data/providers:ro  # Mount providers for development
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
       interval: 30s
@@ -120,7 +120,7 @@ services:
   # Minimal provider for testing
   minimal-provider:
     build:
-      context: ../providers/examples/minimal-provider
+      context: ../../providers/examples/minimal-provider
       dockerfile: Dockerfile
     container_name: timebase-minimal-provider
     ports:
@@ -142,7 +142,7 @@ services:
   # Yahoo Finance provider
   yahoo-finance-provider:
     build:
-      context: ../providers/yahoo-finance
+      context: ../../providers/yahoo-finance
       dockerfile: Dockerfile
     container_name: timebase-yahoo-finance
     ports:
