@@ -79,15 +79,6 @@ jobs:
           name: coverage-report
           path: 'coveragereport'
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: 'src/TestResults/**/coverage.cobertura.xml'
-          flags: unittests
-          name: codecov-timebase
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
         uses: 5monkeys/cobertura-action@v14
