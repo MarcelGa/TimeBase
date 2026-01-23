@@ -53,7 +53,8 @@ try
             metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation();
+                .AddRuntimeInstrumentation()
+                .AddMeter("TimeBase.Core"); // Add custom TimeBase metrics
 
             if (otelConfig.GetValue<bool>("Metrics:ConsoleExporter"))
                 metrics.AddConsoleExporter();
@@ -71,6 +72,14 @@ try
     builder.Services.AddDbContext<TimeBaseDbContext>(opts =>
         opts.UseNpgsql(builder.Configuration.GetConnectionString("TimeBaseDb")));
     
+    // Add health checks
+    builder.Services.AddHealthChecks()
+        .AddDbContextCheck<TimeBaseDbContext>(name: "database", tags: new[] { "db", "ready" })
+        .AddNpgSql(
+            builder.Configuration.GetConnectionString("TimeBaseDb") ?? throw new InvalidOperationException("Database connection string not configured"),
+            name: "timescaledb",
+            tags: new[] { "db", "ready" });
+    
     builder.Services.AddServices();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
@@ -82,6 +91,59 @@ try
 
     // Add Prometheus scraping endpoint
     app.MapPrometheusScrapingEndpoint();
+
+    // Add health check endpoints
+    app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => false, // No checks, just returns that the app is running
+        AllowCachingResponses = false
+    });
+    
+    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready"), // Only checks tagged with "ready"
+        AllowCachingResponses = false,
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    description = e.Value.Description,
+                    duration = e.Value.Duration.TotalMilliseconds
+                }),
+                totalDuration = report.TotalDuration.TotalMilliseconds
+            });
+            await context.Response.WriteAsync(result);
+        }
+    });
+    
+    app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => true, // All health checks
+        AllowCachingResponses = false,
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    description = e.Value.Description,
+                    duration = e.Value.Duration.TotalMilliseconds
+                }),
+                totalDuration = report.TotalDuration.TotalMilliseconds
+            });
+            await context.Response.WriteAsync(result);
+        }
+    });
 
     // Apply EF migrations with proper logging
     using (var scope = app.Services.CreateScope())

@@ -16,6 +16,7 @@ Open-source, modular time series data provider service for financial data. Inspi
 - **REST API**: Clean HTTP API for data access and provider management
 - **WebSocket Support**: Real-time data streaming (future)
 - **Docker Native**: Containerized deployment with Docker Compose
+- **Observability**: Built-in monitoring with OpenTelemetry, Prometheus, Jaeger, and Grafana
 
 ## Quick Start
 
@@ -46,6 +47,30 @@ docker-compose -f docker/docker-compose.yml ps
 This starts:
 - **TimescaleDB**: PostgreSQL with TimescaleDB extension on port 5432
 - **TimeBase Core**: .NET API server on port 8080
+
+### Observability Stack (Optional)
+
+TimeBase includes a comprehensive observability stack with metrics, tracing, and visualization:
+
+```bash
+# Start with observability services
+cd src/docker
+docker-compose --profile observability up -d
+```
+
+This adds:
+- **Jaeger** (port 16686): Distributed tracing UI - http://localhost:16686
+- **Prometheus** (port 9090): Metrics collection - http://localhost:9090
+- **Grafana** (port 3000): Dashboards and visualization - http://localhost:3000 (admin/admin)
+
+**Available Endpoints:**
+- Metrics: http://localhost:8080/metrics
+- Health checks:
+  - Live: http://localhost:8080/health/live
+  - Ready: http://localhost:8080/health/ready
+  - Full: http://localhost:8080/health
+
+For detailed information, see [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
 
 ### 3. Install Example Provider
 

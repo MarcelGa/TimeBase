@@ -10,7 +10,11 @@ namespace TimeBase.Core.Services;
 /// In MVP: Queries TimescaleDB directly.
 /// Future: Routes requests to providers via gRPC, maintains connection pool.
 /// </summary>
-public class DataCoordinator(TimeBaseDbContext db, ProviderRegistry providerRegistry, ILogger<DataCoordinator> logger)
+public class DataCoordinator(
+    TimeBaseDbContext db, 
+    ProviderRegistry providerRegistry, 
+    ILogger<DataCoordinator> logger,
+    TimeBaseMetrics metrics)
 {
     /// <summary>
     /// Get historical time series data for a symbol.
@@ -26,22 +30,37 @@ public class DataCoordinator(TimeBaseDbContext db, ProviderRegistry providerRegi
             "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End}",
             symbol, interval, start, end);
 
-        var query = db.TimeSeries
-            .Where(d => d.Symbol == symbol && d.Interval == interval)
-            .Where(d => d.Time >= start && d.Time <= end);
-
-        // Optionally filter by provider
-        if (providerId.HasValue)
+        var startTime = DateTime.UtcNow;
+        try
         {
-            query = query.Where(d => d.ProviderId == providerId.Value);
+            var query = db.TimeSeries
+                .Where(d => d.Symbol == symbol && d.Interval == interval)
+                .Where(d => d.Time >= start && d.Time <= end);
+
+            // Optionally filter by provider
+            if (providerId.HasValue)
+            {
+                query = query.Where(d => d.ProviderId == providerId.Value);
+            }
+
+            var data = await query
+                .OrderBy(d => d.Time)
+                .ToListAsync();
+
+            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
+
+            logger.LogInformation("Fetched {Count} data points for {Symbol}", data.Count, symbol);
+            return data;
         }
-
-        var data = await query
-            .OrderBy(d => d.Time)
-            .ToListAsync();
-
-        logger.LogInformation("Fetched {Count} data points for {Symbol}", data.Count, symbol);
-        return data;
+        catch (Exception ex)
+        {
+            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
+            metrics.RecordError("data_query", ex.GetType().Name);
+            logger.LogError(ex, "Failed to fetch data for {Symbol}", symbol);
+            throw;
+        }
     }
 
     /// <summary>
@@ -92,11 +111,26 @@ public class DataCoordinator(TimeBaseDbContext db, ProviderRegistry providerRegi
 
         logger.LogInformation("Storing {Count} time series data points", list.Count);
 
-        db.TimeSeries.AddRange(list);
-        await db.SaveChangesAsync();
+        try
+        {
+            db.TimeSeries.AddRange(list);
+            await db.SaveChangesAsync();
 
-        logger.LogInformation("Successfully stored {Count} data points", list.Count);
-        return list.Count;
+            // Record metrics - extract symbol if all points have same symbol
+            var symbol = list.Select(d => d.Symbol).Distinct().Count() == 1 
+                ? list.First().Symbol 
+                : null;
+            metrics.RecordDataStore(list.Count, symbol, success: true);
+
+            logger.LogInformation("Successfully stored {Count} data points", list.Count);
+            return list.Count;
+        }
+        catch (Exception ex)
+        {
+            metrics.RecordError("data_store", ex.GetType().Name);
+            logger.LogError(ex, "Failed to store time series data");
+            throw;
+        }
     }
 
     /// <summary>
