@@ -91,15 +91,61 @@ public static class EndpointsExtensions
             });
         });
 
-        // Get historical data (placeholder)
-        app.MapGet("/api/data/{symbol}", (string symbol, string interval) => 
+        // Get historical data
+        app.MapGet("/api/data/{symbol}", async (
+            string symbol, 
+            string interval,
+            DateTime? start,
+            DateTime? end,
+            Guid? providerId,
+            DataCoordinator coordinator) => 
         {
+            // Default to last 30 days if no dates provided
+            var startDate = start ?? DateTime.UtcNow.AddDays(-30);
+            var endDate = end ?? DateTime.UtcNow;
+
+            try
+            {
+                var data = await coordinator.GetHistoricalAsync(symbol, interval, startDate, endDate, providerId);
+                return Results.Ok(new 
+                { 
+                    symbol,
+                    interval,
+                    start = startDate,
+                    end = endDate,
+                    count = data.Count,
+                    data
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    title: "Failed to fetch data",
+                    detail: ex.Message,
+                    statusCode: 500
+                );
+            }
+        });
+
+        // Get data summary for a symbol
+        app.MapGet("/api/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
+        {
+            var summary = await coordinator.GetDataSummaryAsync(symbol);
+            if (summary == null)
+                return Results.NotFound(new { error = $"No data found for symbol {symbol}" });
+            
+            return Results.Ok(new { summary });
+        });
+
+        // Get available providers for a symbol
+        app.MapGet("/api/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
+        {
+            var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
             return Results.Ok(new 
             { 
-                symbol, 
-                interval, 
-                data = Array.Empty<object>(),
-                message = "Data retrieval not yet implemented in Phase 2"
+                symbol,
+                count = providers.Count,
+                providers
             });
         });
     }
