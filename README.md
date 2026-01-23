@@ -1,8 +1,11 @@
 # TimeBase
 
+[![Build Core](https://github.com/MarcelGa/TimeBase/actions/workflows/build-core.yml/badge.svg)](https://github.com/MarcelGa/TimeBase/actions/workflows/build-core.yml)
+[![codecov](https://codecov.io/gh/MarcelGa/TimeBase/branch/master/graph/badge.svg)](https://codecov.io/gh/MarcelGa/TimeBase)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
+[![Tests](https://img.shields.io/badge/tests-73%20passing-brightgreen)](https://github.com/MarcelGa/TimeBase/actions)
 
 Open-source, modular time series data provider service for financial data. Inspired by Home Assistant's add-on architecture, TimeBase provides a centralized core that manages pluggable data providers via Docker containers.
 
