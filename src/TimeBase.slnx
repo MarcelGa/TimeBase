@@ -7,4 +7,5 @@
   <Project Path="TimeBase.Core\TimeBase.Core.csproj" Type="C#" />
   <Project Path="TimeBase.Contracts\TimeBase.Contracts.csproj" Type="C#" />
   <Project Path="TimeBase.Core.Infrastructure\TimeBase.Core.Infrastructure.csproj" Type="C#" />
+  <Project Path="TimeBase.Core.Tests\TimeBase.Core.Tests.csproj" Type="C#" />
 </Solution>

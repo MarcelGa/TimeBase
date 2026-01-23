@@ -7,6 +7,7 @@ on:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
+      - 'src/TimeBase.Core.Tests/**'
       - 'src/TimeBase.slnx'
       - 'src/.editorconfig'
       - 'src/docker/**'
@@ -17,6 +18,7 @@ on:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
+      - 'src/TimeBase.Core.Tests/**'
       - 'src/TimeBase.slnx'
       - 'src/.editorconfig'
       - 'src/docker/**'
@@ -53,14 +55,44 @@ jobs:
 
       - name: Run tests
         working-directory: src
-        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: test-results-${{ matrix.os }}
-          path: '**/*.trx'
+          path: 'src/TestResults/**/*.trx'
+
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.os == 'ubuntu-latest'
+        with:
+          name: coverage-results
+          path: 'src/TestResults/**/coverage.cobertura.xml'
+
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-latest'
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+        with:
+          reports: 'src/TestResults/**/coverage.cobertura.xml'
+          targetdir: 'coveragereport'
+          reporttypes: 'HtmlInline;Cobertura;Badges'
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: coverage-report
+          path: 'coveragereport'
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest'
+        uses: 5monkeys/cobertura-action@v14
+        with:
+          path: 'src/TestResults/**/coverage.cobertura.xml'
+          minimum_coverage: 70
+          fail_below_threshold: false
 
       - name: Check code formatting
         working-directory: src
