@@ -2,17 +2,20 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.102-noble-amd64 AS build
 WORKDIR /src
 
-# Copy solution & project files
-COPY TimeBase.slnx ./
-COPY TimeBase.Core/TimeBase.Core.csproj ./TimeBase.Core/
-COPY TimeBase.Core.Infrastructure/TimeBase.Core.Infrastructure.csproj ./TimeBase.Core.Infrastructure/
+# Copy project files for restore
 COPY TimeBase.Contracts/TimeBase.Contracts.csproj ./TimeBase.Contracts/
+COPY TimeBase.Core.Infrastructure/TimeBase.Core.Infrastructure.csproj ./TimeBase.Core.Infrastructure/
+COPY TimeBase.Core/TimeBase.Core.csproj ./TimeBase.Core/
 
-RUN dotnet restore TimeBase.slnx
+# Restore dependencies
+RUN dotnet restore TimeBase.Core/TimeBase.Core.csproj
 
 # Copy all source files
-COPY . ./
+COPY TimeBase.Contracts/ ./TimeBase.Contracts/
+COPY TimeBase.Core.Infrastructure/ ./TimeBase.Core.Infrastructure/
+COPY TimeBase.Core/ ./TimeBase.Core/
 
+# Build and publish
 WORKDIR /src/TimeBase.Core
 RUN dotnet publish TimeBase.Core.csproj -c Release -o /app/publish
 
