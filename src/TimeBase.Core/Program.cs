@@ -2,28 +2,116 @@ using Microsoft.EntityFrameworkCore;
 using TimeBase.Core.Data;
 using TimeBase.Core.Services;
 using TimeBase.Core;
+using Serilog;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 
-var builder = WebApplication.CreateBuilder(args);
+// Configure Serilog early
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddDbContext<TimeBaseDbContext>(opts =>
-    opts.UseNpgsql(builder.Configuration.GetConnectionString("TimeBaseDb")));
-builder.Services.AddServices();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
+try
 {
-  var db = scope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
-  try { db.Database.Migrate(); } catch { }
+    Log.Information("Starting TimeBase.Core");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Replace default logging with Serilog
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    // Add OpenTelemetry
+    var otelConfig = builder.Configuration.GetSection("OpenTelemetry");
+    var serviceName = otelConfig["ServiceName"] ?? "TimeBase.Core";
+    var serviceVersion = otelConfig["ServiceVersion"] ?? "1.0.0";
+
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource
+            .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddEntityFrameworkCoreInstrumentation();
+
+            if (otelConfig.GetValue<bool>("Tracing:ConsoleExporter"))
+                tracing.AddConsoleExporter();
+
+            if (otelConfig.GetValue<bool>("Tracing:OtlpExporter"))
+                tracing.AddOtlpExporter(opts =>
+                {
+                    opts.Endpoint = new Uri(otelConfig["Tracing:OtlpEndpoint"] ?? "http://localhost:4317");
+                });
+        })
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation();
+
+            if (otelConfig.GetValue<bool>("Metrics:ConsoleExporter"))
+                metrics.AddConsoleExporter();
+
+            if (otelConfig.GetValue<bool>("Metrics:OtlpExporter"))
+                metrics.AddOtlpExporter(opts =>
+                {
+                    opts.Endpoint = new Uri(otelConfig["Metrics:OtlpEndpoint"] ?? "http://localhost:4317");
+                });
+        });
+
+    builder.Services.AddDbContext<TimeBaseDbContext>(opts =>
+        opts.UseNpgsql(builder.Configuration.GetConnectionString("TimeBaseDb")));
+    
+    builder.Services.AddServices();
+    builder.Services.AddSwaggerGen();
+
+    var app = builder.Build();
+
+    // Add Serilog request logging
+    app.UseSerilogRequestLogging();
+
+    // Apply EF migrations with proper logging
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        
+        try 
+        { 
+            logger.LogInformation("Applying database migrations...");
+            db.Database.Migrate(); 
+            logger.LogInformation("Database migrations applied successfully");
+        } 
+        catch (Exception ex) 
+        {
+            logger.LogError(ex, "Failed to apply database migrations");
+        }
+    }
+
+    app.AddTimeBaseEndpoints();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+    return 1;
+}
+finally
+{
+    Log.CloseAndFlush();
 }
 
-app.AddTimeBaseEndpoints();
-
-if (app.Environment.IsDevelopment())
-{
-  app.UseSwagger();
-  app.UseSwaggerUI();
-}
-
-app.Run();
+return 0;
