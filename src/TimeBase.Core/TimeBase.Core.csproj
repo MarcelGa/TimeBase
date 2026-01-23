@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>12.0</LangVersion>
-    <RootNamespace>TimeBase.Supervisor</RootNamespace>
+    <RootNamespace>TimeBase.Core</RootNamespace>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <UserSecretsId>timebase-supervisor</UserSecretsId>
+    <UserSecretsId>timebase-core</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,12 +2,12 @@
 
 ## Overview
 
-TimeBase is a modular time series data provider service inspired by Home Assistant's add-on architecture. It provides a centralized supervisor that manages pluggable data providers, offering a unified interface for accessing financial time series data.
+TimeBase is a modular time series data provider service inspired by Home Assistant's add-on architecture. It provides a centralized core that manages pluggable data providers, offering a unified interface for accessing financial time series data.
 
 ## Core Principles
 
 ### 1. Modular Architecture
-- **Supervisor**: Central orchestration service written in .NET 10
+- **Core**: Central orchestration service written in .NET 10
 - **Providers**: Pluggable Docker containers that implement data fetching
 - **Protocol**: gRPC for efficient communication between components
 - **Storage**: TimescaleDB for optimized time series data storage
@@ -33,7 +33,7 @@ TimeBase is a modular time series data provider service inspired by Home Assista
 └─────────────────────────────────────────────────────────────┘
                     ↓ REST API / WebSocket
 ┌─────────────────────────────────────────────────────────────┐
-│                  TimeBase Supervisor (.NET 10)               │
+│                  TimeBase Core (.NET 10)                     │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  API Layer (ASP.NET Core + SignalR)                  │  │
 │  │  - REST endpoints for historical data                │  │
@@ -75,9 +75,9 @@ TimeBase is a modular time series data provider service inspired by Home Assista
 
 ## Component Details
 
-### Supervisor Service (.NET 10)
+### Core Service (.NET 10)
 
-The supervisor is the central orchestration component built with ASP.NET Core 10.
+The core is the central orchestration component built with ASP.NET Core 10.
 
 #### Key Components
 
@@ -288,7 +288,7 @@ service DataProvider {
   // Get provider capabilities
   rpc GetCapabilities(google.protobuf.Empty) returns (ProviderCapabilities);
 
-  // Historical data (supervisor → provider, streaming response)
+  // Historical data (core → provider, streaming response)
   rpc GetHistoricalData(HistoricalDataRequest) returns (stream TimeSeriesData);
 
   // Real-time streaming (bidirectional)
@@ -356,10 +356,10 @@ services:
       timeout: 5s
       retries: 5
 
-  supervisor:
+  core:
     build:
       context: ..
-      dockerfile: docker/supervisor/Dockerfile
+      dockerfile: docker/core/Dockerfile
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -425,11 +425,11 @@ CMD ["python", "src/main.py"]
 - **Query Latency**: < 500ms for cached queries, < 2s for fresh data
 - **Concurrent Connections**: Support 100+ simultaneous clients
 - **Data Ingestion**: Handle 10,000+ data points per second
-- **Memory Usage**: < 512MB for supervisor, < 256MB per provider
+- **Memory Usage**: < 512MB for core, < 256MB per provider
 - **Storage Efficiency**: 70%+ compression with TimescaleDB
 
 #### Scaling Strategy
-- **Horizontal**: Multiple supervisor instances (future)
+- **Horizontal**: Multiple core instances (future)
 - **Vertical**: Optimize single-instance performance
 - **Caching**: Multi-layer caching (memory, Redis)
 - **Connection Pooling**: Reuse connections to providers and database
@@ -458,7 +458,7 @@ CMD ["python", "src/main.py"]
 
 #### Development
 - **Docker Compose**: Local development environment
-- **Hot Reload**: .NET hot reload for supervisor
+- **Hot Reload**: .NET hot reload for core
 - **Volume Mounting**: Live code changes for providers
 
 #### Production
@@ -473,7 +473,7 @@ CMD ["python", "src/main.py"]
 #### Provider Ecosystem
 - **Provider Registry**: Centralized registry of available providers
 - **Version Management**: Semantic versioning for providers
-- **Compatibility Matrix**: Supervisor ↔ Provider compatibility
+- **Compatibility Matrix**: Core ↔ Provider compatibility
 
 #### API Extensions
 - **GraphQL**: Alternative query interface (future)

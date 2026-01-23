@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TimeBase.Supervisor.Data;
-using TimeBase.Supervisor.Services;
-using TimeBase.Supervisor;
+using TimeBase.Core.Data;
+using TimeBase.Core.Services;
+using TimeBase.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,11 +1,11 @@
-namespace TimeBase.Supervisor;
+namespace TimeBase.Core;
 
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using TimeBase.Supervisor.Data;
-using TimeBase.Supervisor.Services;
+using TimeBase.Core.Data;
+using TimeBase.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
 public static class EndpointsExtensions

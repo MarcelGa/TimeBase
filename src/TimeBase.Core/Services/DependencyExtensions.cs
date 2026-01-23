@@ -1,4 +1,4 @@
-﻿namespace TimeBase.Supervisor.Services;
+namespace TimeBase.Core.Services;
 
 public static class DependencyExtensions
 {

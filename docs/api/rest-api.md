@@ -6,7 +6,7 @@ This document specifies the REST API for TimeBase, providing programmatic access
 
 The TimeBase REST API provides two main query patterns:
 
-1. **Symbol-centric**: Client specifies a symbol, supervisor automatically selects the best provider
+1. **Symbol-centric**: Client specifies a symbol, core automatically selects the best provider
 2. **Provider-aware**: Client explicitly chooses both provider and symbol
 
 ## Base URL
@@ -412,7 +412,7 @@ Check the overall health of the TimeBase system.
     "uptime": "2d 4h 30m",
     "services": {
       "database": "healthy",
-      "supervisor": "healthy",
+      "core": "healthy",
       "providers": {
         "yahoo-finance": "healthy",
         "alpha-vantage": "healthy"

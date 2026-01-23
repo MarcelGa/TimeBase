@@ -2,19 +2,19 @@
 
 ## Overview
 
-TimeBase is an open-source, modular time series data provider service for financial data. It follows a Home Assistant-inspired architecture with a central supervisor managing pluggable data providers via Docker containers.
+TimeBase is an open-source, modular time series data provider service for financial data. It follows a Home Assistant-inspired architecture with a central core managing pluggable data providers via Docker containers.
 
 ## Architecture Principles
 
 - **Modular**: Pluggable provider architecture (like Home Assistant add-ons)
-- **Bidirectional gRPC**: Efficient communication between supervisor and providers
+- **Bidirectional gRPC**: Efficient communication between core and providers
 - **OHLCV + Extensions**: Standardized data format with optional metadata
 - **Historical First**: Focus on historical data initially, real-time streaming later
 - **Personal/Small Team Scale**: Optimized for personal use and small teams
 
 ## Technology Stack
 
-- **Supervisor**: .NET 10 (C#) with ASP.NET Core
+- **Core**: .NET 10 (C#) with ASP.NET Core
 - **Providers**: Python 3.11+ Docker containers
 - **Communication**: gRPC (bidirectional streaming)
 - **Database**: TimescaleDB (PostgreSQL extension)
@@ -29,18 +29,18 @@ TimeBase is an open-source, modular time series data provider service for financ
 
 ### Deliverables
 - ✅ Complete project structure (35+ files)
-- ✅ .NET 10 supervisor skeleton with gRPC support
+- ✅ .NET 10 core skeleton with gRPC support
 - ✅ Python provider SDK with abstract base class
 - ✅ gRPC protocol definitions (bidirectional streaming)
 - ✅ TimescaleDB schema with hypertables
-- ✅ Docker infrastructure (TimescaleDB + Supervisor)
+- ✅ Docker infrastructure (TimescaleDB + Core)
 - ✅ GitHub Actions CI/CD workflows
 - ✅ Comprehensive documentation
-- ✅ Working gRPC communication between supervisor and test provider
+- ✅ Working gRPC communication between core and test provider
 
 ### Technical Implementation
 - **gRPC Protocol**: Complete bidirectional streaming contract
-- **.NET Supervisor**: ASP.NET Core 10 with minimal API and gRPC services
+- **.NET Core**: ASP.NET Core 10 with minimal API and gRPC services
 - **Python SDK**: Installable package with TimeBaseProvider abstract class
 - **Database**: TimescaleDB with compression and retention policies
 - **Docker**: Multi-container setup with health checks
@@ -56,9 +56,9 @@ TimeBase is an open-source, modular time series data provider service for financ
 
 ---
 
-## Phase 2: Core Supervisor (Weeks 3-4)
+## Phase 2: Core Implementation (Weeks 3-4)
 
-**Goal**: Implement the supervisor's core business logic and provider management.
+**Goal**: Implement the core's business logic and provider management.
 
 ### Deliverables
 - EF Core data models and DbContext
@@ -146,7 +146,7 @@ TimeBase is an open-source, modular time series data provider service for financ
 - ✅ Respects rate limits and handles errors gracefully
 - ✅ Docker image builds and runs on multiple architectures
 - ✅ Integration tests pass with real data
-- ✅ Provider can be installed via supervisor REST API
+- ✅ Provider can be installed via core REST API
 
 ---
 
@@ -171,7 +171,7 @@ TimeBase is an open-source, modular time series data provider service for financ
 - **Testing**: WebSocket integration tests with mock providers
 
 ### Validation Criteria
-- ✅ Real-time data flows from provider → supervisor → clients
+- ✅ Real-time data flows from provider → core → clients
 - ✅ Multiple clients can subscribe to the same symbol
 - ✅ Connection recovery and error handling works
 - ✅ Performance scales with concurrent connections
@@ -221,13 +221,13 @@ TimeBase is an open-source, modular time series data provider service for financ
 
 ### Non-Functional Requirements
 - ✅ Response time < 500ms for cached queries
-- ✅ 99.9% uptime for supervisor service
+- ✅ 99.9% uptime for core service
 - ✅ Provider installation < 2 minutes
 - ✅ Memory usage < 512MB for supervisor
 - ✅ Supports 100+ concurrent connections
 
 ### Quality Metrics
-- ✅ 80%+ code coverage for supervisor
+- ✅ 80%+ code coverage for core
 - ✅ All critical paths have integration tests
 - ✅ Documentation covers all public APIs
 - ✅ GitHub Actions pass on all PRs
@@ -276,14 +276,14 @@ TimeBase is an open-source, modular time series data provider service for financ
 | Phase | Duration | Key Deliverables | Status |
 |-------|----------|------------------|--------|
 | **Phase 1** | 2 weeks | Complete foundation | ✅ COMPLETED |
-| **Phase 2** | 2 weeks | Core supervisor logic | ⏳ NEXT |
+| **Phase 2** | 2 weeks | Core implementation | ⏳ NEXT |
 | **Phase 3** | 2 weeks | REST API | 📋 PLANNED |
 | **Phase 4** | 1 week | Yahoo Finance provider | 📋 PLANNED |
 | **Phase 5** | 2 weeks | Real-time streaming | 📋 FUTURE |
 | **Phase 6** | 1 week | Production polish | 📋 FUTURE |
 
 **Total Estimated Timeline**: 10 weeks (2.5 months)
-**Current Phase**: Phase 2 (Core Supervisor)
+**Current Phase**: Phase 2 (Core Implementation)
 
 ---
 
@@ -294,7 +294,7 @@ To contribute to TimeBase development:
 1. **Fork** the repository
 2. **Clone** your fork: `git clone https://github.com/yourusername/TimeBase.git`
 3. **Setup** development environment: `docker-compose up -d` (from `docker/` directory)
-4. **Build** the supervisor: `dotnet build TimeBase.sln`
+4. **Build** the core: `dotnet build TimeBase.sln`
 5. **Test** the SDK: `cd src/TimeBase.ProviderSdk && pip install -e .`
 6. **Create** a feature branch: `git checkout -b feature/your-feature`
 7. **Make** your changes and add tests

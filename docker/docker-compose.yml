@@ -23,12 +23,12 @@ services:
     networks:
       - timebase
 
-  # TimeBase supervisor service
-  supervisor:
+  # TimeBase core service
+  core:
     build:
       context: ..
-      dockerfile: docker/supervisor/Dockerfile
-    container_name: timebase-supervisor
+      dockerfile: docker/core/Dockerfile
+    container_name: timebase-core
     ports:
       - "8080:8080"   # REST API
       - "50051:50051" # gRPC

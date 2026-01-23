@@ -1,24 +1,24 @@
-name: Build Supervisor
+name: Build Core
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/TimeBase.Supervisor/**'
+      - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'TimeBase.sln'
-      - '.github/workflows/build-supervisor.yml'
+      - '.github/workflows/build-core.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'src/TimeBase.Supervisor/**'
+      - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'TimeBase.sln'
-      - '.github/workflows/build-supervisor.yml'
+      - '.github/workflows/build-core.yml'
 
 jobs:
   build:
-    name: Build .NET Supervisor
+    name: Build .NET Core
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -60,9 +60,9 @@ jobs:
       - name: Build Docker image (ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          docker build -f docker/supervisor/Dockerfile -t timebase/supervisor:test .
+          docker build -f docker/core/Dockerfile -t timebase/core:test .
 
       - name: Test Docker image (ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          docker run --rm timebase/supervisor:test --version || echo "Version check completed"
+          docker run --rm timebase/core:test --version || echo "Version check completed"

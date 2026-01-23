@@ -1,7 +1,7 @@
-using TimeBase.Supervisor.Entities;
-using TimeBase.Supervisor.Data;
+using TimeBase.Core.Entities;
+using TimeBase.Core.Data;
 
-namespace TimeBase.Supervisor.Services
+namespace TimeBase.Core.Services
 {
     public class DataCoordinator(TimeBaseDbContext db)
     {

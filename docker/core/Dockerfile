@@ -4,7 +4,7 @@ WORKDIR /src
 
 # Copy solution & project files
 COPY TimeBase.sln ./
-COPY src/TimeBase.Supervisor/TimeBase.Supervisor.csproj ./src/TimeBase.Supervisor/
+COPY src/TimeBase.Core/TimeBase.Core.csproj ./src/TimeBase.Core/
 COPY src/TimeBase.Contracts/TimeBase.Contracts.csproj ./src/TimeBase.Contracts/
 
 RUN dotnet restore TimeBase.sln
@@ -12,8 +12,8 @@ RUN dotnet restore TimeBase.sln
 # Copy all source files
 COPY . ./
 
-WORKDIR /src/src/TimeBase.Supervisor
-RUN dotnet publish TimeBase.Supervisor.csproj -c Release -o /app/publish
+WORKDIR /src/src/TimeBase.Core
+RUN dotnet publish TimeBase.Core.csproj -c Release -o /app/publish
 
 ## Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-bullseye-slim AS runtime
@@ -24,4 +24,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 EXPOSE 50051
 
-ENTRYPOINT ["dotnet", "TimeBase.Supervisor.dll"]
+ENTRYPOINT ["dotnet", "TimeBase.Core.dll"]

@@ -4,7 +4,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
 
-Open-source, modular time series data provider service for financial data. Inspired by Home Assistant's add-on architecture, TimeBase provides a centralized supervisor that manages pluggable data providers via Docker containers.
+Open-source, modular time series data provider service for financial data. Inspired by Home Assistant's add-on architecture, TimeBase provides a centralized core that manages pluggable data providers via Docker containers.
 
 ## Features
 
@@ -36,7 +36,7 @@ cd TimeBase
 ### 2. Start Development Environment
 
 ```bash
-# Start TimescaleDB and supervisor
+# Start TimescaleDB and core
 docker-compose -f docker/docker-compose.yml up -d
 
 # Verify services are running
@@ -45,7 +45,7 @@ docker-compose -f docker/docker-compose.yml ps
 
 This starts:
 - **TimescaleDB**: PostgreSQL with TimescaleDB extension on port 5432
-- **TimeBase Supervisor**: .NET API server on port 8080
+- **TimeBase Core**: .NET API server on port 8080
 
 ### 3. Install Example Provider
 
@@ -99,7 +99,7 @@ Open your browser to: http://localhost:8080/swagger
 └─────────────────────────────────────────────────────────────┘
                     ↓ REST API / WebSocket
 ┌─────────────────────────────────────────────────────────────┐
-│                  TimeBase Supervisor (.NET 10)               │
+│                  TimeBase Core (.NET 10)                     │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  API Layer (ASP.NET Core + SignalR)                  │  │
 │  │  - REST endpoints for historical data                │  │
@@ -280,15 +280,15 @@ cd docker
 docker-compose up -d
 ```
 
-3. **Build supervisor**:
+3. **Build core**:
 ```bash
 dotnet restore TimeBase.sln
 dotnet build TimeBase.sln
 ```
 
-4. **Run supervisor**:
+4. **Run core**:
 ```bash
-cd src/TimeBase.Supervisor
+cd src/TimeBase.Core
 dotnet run
 ```
 
@@ -301,7 +301,7 @@ pip install -e .
 ### Testing
 
 ```bash
-# Run supervisor tests
+# Run core tests
 dotnet test TimeBase.sln
 
 # Run provider SDK tests
@@ -316,8 +316,8 @@ docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 ### Building Docker Images
 
 ```bash
-# Build supervisor
-docker build -f docker/supervisor/Dockerfile -t timebase/supervisor:latest .
+# Build core
+docker build -f docker/core/Dockerfile -t timebase/core:latest .
 
 # Build provider
 cd providers/examples/minimal-provider
@@ -342,9 +342,9 @@ TimeBase will support Kubernetes deployment with Helm charts for production envi
 
 ## Configuration
 
-### Supervisor Configuration
+### Core Configuration
 
-Edit `src/TimeBase.Supervisor/appsettings.json`:
+Edit `src/TimeBase.Core/appsettings.json`:
 
 ```json
 {
@@ -371,7 +371,7 @@ Each provider has its own `config.yaml` with capabilities and options.
 See [ROADMAP.md](docs/ROADMAP.md) for detailed development phases:
 
 - ✅ **Phase 1**: Foundation (complete)
-- 🔄 **Phase 2**: Core supervisor (in progress)
+- 🔄 **Phase 2**: Core implementation (in progress)
 - 📋 **Phase 3**: REST API (planned)
 - 📋 **Phase 4**: Production provider (planned)
 - 📋 **Phase 5**: Real-time streaming (future)

@@ -1,6 +1,6 @@
 using System;
 
-namespace TimeBase.Supervisor.Entities;
+namespace TimeBase.Core.Entities;
 
 public record Provider(
     Guid Id,

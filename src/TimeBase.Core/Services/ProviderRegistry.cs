@@ -1,7 +1,7 @@
-using TimeBase.Supervisor.Data;
-using TimeBase.Supervisor.Entities;
+using TimeBase.Core.Data;
+using TimeBase.Core.Entities;
 
-namespace TimeBase.Supervisor.Services;
+namespace TimeBase.Core.Services;
 
 public class ProviderRegistry(TimeBaseDbContext db)
 {

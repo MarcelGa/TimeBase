@@ -12,7 +12,7 @@ This document captures all technical decisions and agreements made during the de
 
 | Component | Technology | Version | Rationale |
 |-----------|------------|---------|-----------|
-| **Supervisor Runtime** | .NET | 10 | Superior async performance, excellent gRPC support, mature ecosystem |
+| **Core Runtime** | .NET | 10 | Superior async performance, excellent gRPC support, mature ecosystem |
 | **Web Framework** | ASP.NET Core | 10 | Unified with .NET runtime, excellent performance, built-in features |
 | **Provider SDK** | Python | 3.11+ | Most popular for financial data processing, rich ecosystem |
 | **Communication** | gRPC | Latest | Efficient binary protocol, bidirectional streaming, strong typing |
@@ -60,7 +60,7 @@ message TimeSeriesData {
 
 #### gRPC with Bidirectional Streaming
 
-**Decision**: Use gRPC for all supervisor ↔ provider communication with bidirectional streaming support.
+**Decision**: Use gRPC for all core ↔ provider communication with bidirectional streaming support.
 
 **Rationale**:
 - **Performance**: Binary protocol, more efficient than REST/HTTP
@@ -107,7 +107,7 @@ provider/
 #### Hybrid: Symbol-centric + Provider-aware
 
 **Decision**: Support both query patterns:
-- **Symbol-centric**: Client specifies symbol, supervisor chooses provider
+- **Symbol-centric**: Client specifies symbol, core chooses provider
 - **Provider-aware**: Client explicitly chooses provider + symbol
 
 **Rationale**:
@@ -214,7 +214,7 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 
 **Development Environment**:
 - Docker Compose for local development
-- Hot reload for .NET supervisor
+- Hot reload for .NET core
 - Live mounting for Python providers
 - Integrated debugging support
 
@@ -228,7 +228,7 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 - **Response Time**: < 500ms cached, < 2s fresh data
 - **Concurrent Users**: 100+ simultaneous connections
 - **Data Throughput**: 10,000+ data points/second ingestion
-- **Memory Usage**: < 512MB supervisor, < 256MB per provider
+- **Memory Usage**: < 512MB core, < 256MB per provider
 - **Storage Efficiency**: 70%+ compression ratio
 
 ### 12. Security Approach
@@ -366,12 +366,12 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 ### Phase 1: Foundation (COMPLETED)
 - ✅ Project structure and tooling
 - ✅ gRPC protocol definitions
-- ✅ Basic supervisor and SDK skeletons
+- ✅ Basic core and SDK skeletons
 - ✅ Docker infrastructure
 - ✅ Database schema
 - ✅ CI/CD pipelines
 
-### Phase 2: Core Supervisor (NEXT)
+### Phase 2: Core Implementation (NEXT)
 - EF Core data models and repository pattern
 - Provider registry and lifecycle management
 - Capability-based routing implementation
@@ -406,7 +406,7 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 
 ### Code Quality
 - **Code Reviews**: Required for all PRs
-- **Testing**: 80%+ coverage for supervisor code
+- **Testing**: 80%+ coverage for core code
 - **Linting**: Automated code style enforcement
 - **Security**: Regular dependency updates and scans
 
