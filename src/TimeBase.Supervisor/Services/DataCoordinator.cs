@@ -1,19 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TimeBase.Supervisor.Entities;
 using TimeBase.Supervisor.Data;
 
 namespace TimeBase.Supervisor.Services
 {
-    public class DataCoordinator
+    public class DataCoordinator(TimeBaseDbContext db)
     {
-        private readonly TimeBaseDbContext _db;
-        public DataCoordinator(TimeBaseDbContext db)
-        {
-            _db = db;
-        }
+        private readonly TimeBaseDbContext _db = db;
 
         public Task<IEnumerable<TimeSeriesData>> GetHistoricalAsync(string symbol, string interval, DateTime start, DateTime end)
         {
