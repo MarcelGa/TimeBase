@@ -6,6 +6,8 @@ using Serilog;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using FluentValidation;
+using AspNetCoreRateLimit;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
@@ -80,6 +82,15 @@ try
             name: "timescaledb",
             tags: new[] { "db", "ready" });
     
+    // Add FluentValidation
+    builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+    
+    // Add rate limiting
+    builder.Services.AddMemoryCache();
+    builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+    builder.Services.AddInMemoryRateLimiting();
+    builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+    
     builder.Services.AddServices();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
@@ -88,6 +99,9 @@ try
 
     // Add Serilog request logging
     app.UseSerilogRequestLogging();
+
+    // Add rate limiting
+    app.UseIpRateLimiting();
 
     // Add Prometheus scraping endpoint
     app.MapPrometheusScrapingEndpoint();
