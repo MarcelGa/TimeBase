@@ -4,6 +4,6 @@ public static class DependencyExtensions
 {
     public static IServiceCollection AddServices(this IServiceCollection services) 
         => services
-            .AddSingleton<ProviderRegistry>()
-            .AddSingleton<DataCoordinator>();
+            .AddScoped<ProviderRegistry>()
+            .AddScoped<DataCoordinator>();
 }

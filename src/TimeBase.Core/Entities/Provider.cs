@@ -9,9 +9,9 @@ public record Provider(
     string Version,
     bool Enabled,
     string RepositoryUrl,
-    string ImageUrl,
-    string Config,
-    string Capabilities,
+    string? ImageUrl,
+    string? Config,
+    string? Capabilities,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );
