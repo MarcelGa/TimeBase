@@ -257,15 +257,17 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 
 ### 13. Monitoring & Observability
 
-#### Built-in Application Metrics
+#### Built-in Application Metrics with Full Observability Stack
 
-**Decision**: Include monitoring from day one, extensible architecture.
+**Decision**: Include comprehensive monitoring from day one, with full observability stack for development.
 
 **Application Metrics**:
-- ASP.NET Core built-in metrics
+- ASP.NET Core built-in metrics (requests, duration, active connections)
+- Runtime metrics (GC, CPU, memory, lock contention)
 - gRPC call statistics
 - Database connection pool status
 - Provider health and response times
+- Prometheus `/metrics` endpoint for scraping
 
 **Logging Strategy**:
 - Structured logging with Serilog
@@ -274,30 +276,50 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 - Request correlation IDs via Serilog.AspNetCore
 - Error tracking with stack traces
 - Configurable log levels per namespace
-- OpenTelemetry integration for distributed tracing
 
-**Observability Stack**:
-- Serilog for structured logging
-- OpenTelemetry for tracing and metrics
-- ASP.NET Core metrics instrumentation
-- EF Core query performance tracking
-- Console exporters for development
-- OTLP exporters available for production (Jaeger, Grafana)
+**Observability Stack** (Added 2026-01-23):
+- **Serilog**: Structured logging with configurable outputs
+- **OpenTelemetry**: Vendor-neutral instrumentation
+  - ASP.NET Core instrumentation (HTTP requests)
+  - Entity Framework Core instrumentation (database queries)
+  - HTTP Client instrumentation (outbound requests)
+  - Runtime instrumentation (GC, CPU, memory)
+- **Jaeger** (port 16686): Distributed tracing UI
+  - OTLP gRPC receiver on port 4317
+  - Visualize request flows and timing
+- **Prometheus** (port 9090): Metrics collection and storage
+  - Scrapes `/metrics` endpoint every 15s
+  - PromQL query interface
+- **Grafana** (port 3000): Visualization and dashboards
+  - Pre-configured datasources (Prometheus, Jaeger)
+  - Included ASP.NET Core overview dashboard
+  - Custom dashboard creation
+  
+**Development vs Production**:
+- **Development**: Full stack available via `--profile observability`
+- **Production**: OTLP exporters configurable via environment variables
+- All components optional and can be disabled via configuration
 
-**Health Checks**:
+**Health Checks** (Future):
 - Application startup/shutdown
 - Database connectivity
 - Provider availability
 - External API dependencies
 
+See [OBSERVABILITY.md](OBSERVABILITY.md) for detailed setup and usage instructions.
+
 ### 14. Deployment Strategy
 
 #### Docker Compose for MVP, Kubernetes Future
 
-**Decision**: Start with Docker Compose, design for Kubernetes migration.
+**Decision**: Start with Docker Compose with profile-based services, design for Kubernetes migration.
 
 **Development Deployment**:
 - Single docker-compose.yml for all services
+- Profile-based optional services:
+  - Default: TimescaleDB + TimeBase.Core
+  - `--profile observability`: Adds Jaeger, Prometheus, Grafana
+  - `--profile providers`: Adds example providers
 - Volume mounting for live development
 - Environment-based configuration
 
