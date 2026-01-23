@@ -38,17 +38,32 @@ cd TimeBase
 
 ### 2. Start Development Environment
 
-```bash
-# Start TimescaleDB and core
-docker-compose -f docker/docker-compose.yml up -d
+**Quick Start with Yahoo Finance Provider:**
 
-# Verify services are running
-docker-compose -f docker/docker-compose.yml ps
+```bash
+# Start everything (database, core, and providers)
+cd src/docker
+docker-compose -f docker-compose.dev.yml up --build
 ```
 
 This starts:
 - **TimescaleDB**: PostgreSQL with TimescaleDB extension on port 5432
 - **TimeBase Core**: .NET API server on port 8080
+- **Yahoo Finance Provider**: Real market data provider on port 50053
+- **Minimal Provider**: Test provider on port 50052
+
+**Basic Start (Core only):**
+
+```bash
+# Start TimescaleDB and core only
+cd src/docker
+docker-compose up -d
+
+# Verify services are running
+docker-compose ps
+```
+
+For detailed testing instructions, see [docs/TESTING-LOCAL.md](docs/TESTING-LOCAL.md).
 
 ### Observability Stack (Optional)
 
@@ -74,44 +89,49 @@ This adds:
 
 For detailed information, see [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
 
-### 3. Install Example Provider
+### 3. Test with Real Data
+
+**Option A: Yahoo Finance Provider (Real Market Data)**
 
 ```bash
-# Install the minimal example provider
-curl -X POST http://localhost:8080/api/providers \
-  -H "Content-Type: application/json" \
-  -d '{"repository": "https://github.com/marcelga/timebase-provider-minimal"}'
+# Get Apple stock data for January 2024
+curl "http://localhost:8080/api/data/AAPL?interval=1d&start=2024-01-01&end=2024-01-31"
+
+# Get Bitcoin price data
+curl "http://localhost:8080/api/data/BTC-USD?interval=1h&start=2024-01-01&end=2024-01-02"
+
+# Get S&P 500 index data
+curl "http://localhost:8080/api/data/^GSPC?interval=1wk&start=2024-01-01&end=2024-12-31"
 ```
 
-### 4. Query Data
+**Option B: Minimal Provider (Test Data)**
 
 ```bash
-# Get historical data (returns dummy data from example provider)
+# Get test data
 curl "http://localhost:8080/api/data/TEST?interval=1d&start=2024-01-01&end=2024-01-05"
 ```
 
-**Expected Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "symbol": "TEST",
-    "interval": "1d",
-    "provider": "minimal-provider",
-    "count": 5,
-    "data": [
-      {
-        "timestamp": "2024-01-01T00:00:00Z",
-        "open": 100.0,
-        "high": 105.0,
-        "low": 95.0,
-        "close": 102.0,
-        "volume": 1000000
-      }
-    ]
-  }
-}
-```
+### 4. Access API Documentation
+
+Open your browser to: http://localhost:8080/swagger
+
+## Available Providers
+
+### Yahoo Finance Provider (Production)
+
+**Real market data for:**
+- **Stocks**: US and international (AAPL, MSFT, TSLA, etc.)
+- **Cryptocurrencies**: BTC-USD, ETH-USD, etc.
+- **Indices**: ^GSPC (S&P 500), ^DJI (Dow Jones), ^IXIC (NASDAQ)
+- **ETFs**: SPY, QQQ, VTI, etc.
+
+**Intervals**: 1m, 5m, 15m, 30m, 1h, 1d, 1wk, 1mo
+
+See [providers/yahoo-finance/README.md](providers/yahoo-finance/README.md) for details.
+
+### Minimal Provider (Testing)
+
+Generates synthetic OHLCV data for testing purposes.
 
 ### 5. Access API Documentation
 

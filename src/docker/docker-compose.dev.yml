@@ -1,0 +1,108 @@
+version: '3.8'
+
+# Quick start docker-compose for testing TimeBase with providers
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+services:
+  # TimescaleDB database
+  timescaledb:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: timebase-db
+    environment:
+      POSTGRES_DB: timebase
+      POSTGRES_USER: timebase
+      POSTGRES_PASSWORD: timebase_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - timescale-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timebase -d timebase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - timebase
+
+  # TimeBase core service
+  core:
+    build:
+      context: ..
+      dockerfile: docker/core/Dockerfile
+    container_name: timebase-core
+    ports:
+      - "8080:8080"   # REST API
+      - "50051:50051" # gRPC
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TimeBaseDb: Host=timescaledb;Database=timebase;Username=timebase;Password=timebase_dev
+      Providers__RegistryPath: /data/providers
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__TimeBase: Debug
+    volumes:
+      - ../providers:/data/providers:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - timebase
+
+  # Yahoo Finance provider
+  yahoo-finance-provider:
+    build:
+      context: ../providers/yahoo-finance
+      dockerfile: Dockerfile
+    container_name: timebase-yahoo-finance
+    ports:
+      - "50053:50051"
+    environment:
+      PYTHONPATH: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "from timebase_sdk import TimeBaseProvider; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - timebase
+
+  # Minimal provider for testing
+  minimal-provider:
+    build:
+      context: ../providers/examples/minimal-provider
+      dockerfile: Dockerfile
+    container_name: timebase-minimal-provider
+    ports:
+      - "50052:50051"
+    environment:
+      PYTHONPATH: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - timebase
+
+volumes:
+  timescale-data:
+    driver: local
+
+networks:
+  timebase:
+    driver: bridge

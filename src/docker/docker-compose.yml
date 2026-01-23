@@ -139,6 +139,28 @@ services:
     profiles:
       - providers  # Only start with --profile providers
 
+  # Yahoo Finance provider
+  yahoo-finance-provider:
+    build:
+      context: ../providers/yahoo-finance
+      dockerfile: Dockerfile
+    container_name: timebase-yahoo-finance
+    ports:
+      - "50053:50051"  # Map to different port to avoid conflicts
+    environment:
+      PYTHONPATH: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "from timebase_sdk import TimeBaseProvider; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - timebase
+    profiles:
+      - providers  # Only start with --profile providers
+
 volumes:
   timescale-data:
     driver: local
