@@ -1,9 +1,0 @@
-<Solution>
-  <Folder Name="/Solution Items/">
-    <File Path="docker/docker-compose.yml" />
-    <File Path=".editorconfig" />
-  </Folder>
-  <Project Path="src\TimeBase.Core\TimeBase.Core.csproj" Type="Classic C#" />
-  <Project Path="src\TimeBase.Contracts\TimeBase.Contracts.csproj" Type="Classic C#" />
-  <Project Path="src\TimeBase.Core.Infrastructure\TimeBase.Core.Infrastructure.csproj" Type="Classic C#" />
-</Solution>

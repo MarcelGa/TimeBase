@@ -7,7 +7,9 @@ on:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
-      - 'TimeBase.slnx'
+      - 'src/TimeBase.slnx'
+      - 'src/.editorconfig'
+      - 'src/docker/**'
       - '.github/workflows/build-core.yml'
   pull_request:
     branches: [main]
@@ -15,7 +17,9 @@ on:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
-      - 'TimeBase.slnx'
+      - 'src/TimeBase.slnx'
+      - 'src/.editorconfig'
+      - 'src/docker/**'
       - '.github/workflows/build-core.yml'
 
 jobs:
@@ -40,12 +44,15 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Restore dependencies
+        working-directory: src
         run: dotnet restore TimeBase.slnx
 
       - name: Build solution
+        working-directory: src
         run: dotnet build TimeBase.slnx --configuration Release --no-restore
 
       - name: Run tests
+        working-directory: src
         run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
@@ -56,13 +63,14 @@ jobs:
           path: '**/*.trx'
 
       - name: Check code formatting
+        working-directory: src
         run: dotnet format --verify-no-changes TimeBase.slnx
         continue-on-error: true
 
       - name: Build Docker image (ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          docker build -f docker/core/Dockerfile -t timebase/core:test .
+          docker build -f src/docker/core/Dockerfile -t timebase/core:test .
 
       - name: Test Docker image (ubuntu only)
         if: matrix.os == 'ubuntu-latest'

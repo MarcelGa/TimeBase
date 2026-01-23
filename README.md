@@ -282,6 +282,7 @@ docker-compose up -d
 
 3. **Build core**:
 ```bash
+cd src
 dotnet restore TimeBase.slnx
 dotnet build TimeBase.slnx
 ```
@@ -302,6 +303,7 @@ pip install -e .
 
 ```bash
 # Run core tests
+cd src
 dotnet test TimeBase.slnx
 
 # Run provider SDK tests
@@ -309,7 +311,7 @@ cd src/TimeBase.ProviderSdk
 python -m pytest
 
 # Run integration tests
-cd docker
+cd src/docker
 docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 ```
 
@@ -317,7 +319,7 @@ docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 
 ```bash
 # Build core
-docker build -f docker/core/Dockerfile -t timebase/core:latest .
+docker build -f src/docker/core/Dockerfile -t timebase/core:latest .
 
 # Build provider
 cd providers/examples/minimal-provider
