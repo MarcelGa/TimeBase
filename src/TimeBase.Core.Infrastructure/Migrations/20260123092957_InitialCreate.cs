@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TimeBase.Core.Migrations
+namespace TimeBase.Core.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

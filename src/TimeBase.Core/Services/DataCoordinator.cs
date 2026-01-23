@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TimeBase.Core.Entities;
-using TimeBase.Core.Data;
+using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Infrastructure.Data;
 
 namespace TimeBase.Core.Services;
 

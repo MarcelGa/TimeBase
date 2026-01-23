@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TimeBase.Core.Data;
+using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Services;
 using TimeBase.Core;
 using Serilog;

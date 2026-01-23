@@ -1,6 +1,4 @@
-using System;
-
-namespace TimeBase.Core.Entities;
+namespace TimeBase.Core.Infrastructure.Entities;
 
 public record Symbol(
     Guid Id,
