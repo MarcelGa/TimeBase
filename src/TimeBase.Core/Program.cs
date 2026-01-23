@@ -63,6 +63,9 @@ try
                 {
                     opts.Endpoint = new Uri(otelConfig["Metrics:OtlpEndpoint"] ?? "http://localhost:4317");
                 });
+
+            // Always add Prometheus exporter for scraping
+            metrics.AddPrometheusExporter();
         });
 
     builder.Services.AddDbContext<TimeBaseDbContext>(opts =>
@@ -75,6 +78,9 @@ try
 
     // Add Serilog request logging
     app.UseSerilogRequestLogging();
+
+    // Add Prometheus scraping endpoint
+    app.MapPrometheusScrapingEndpoint();
 
     // Apply EF migrations with proper logging
     using (var scope = app.Services.CreateScope())

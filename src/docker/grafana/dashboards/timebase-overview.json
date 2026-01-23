@@ -1,0 +1,55 @@
+{
+  "dashboard": {
+    "title": "TimeBase Core - Overview",
+    "tags": ["timebase", "aspnetcore"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_total{job=\"timebase-core\"}[5m])",
+            "legendFormat": "{{method}} {{uri}}"
+          }
+        ]
+      },
+      {
+        "title": "HTTP Request Duration (p95)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_request_duration_seconds_bucket{job=\"timebase-core\"}[5m]))",
+            "legendFormat": "{{method}} {{uri}}"
+          }
+        ]
+      },
+      {
+        "title": "Active Database Connections",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "ef_core_active_db_contexts{job=\"timebase-core\"}",
+            "legendFormat": "Active Contexts"
+          }
+        ]
+      },
+      {
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "process_working_set_bytes{job=\"timebase-core\"} / 1024 / 1024",
+            "legendFormat": "Working Set (MB)"
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 16,
+    "version": 0
+  }
+}

@@ -23,6 +23,66 @@ services:
     networks:
       - timebase
 
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: timebase-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    restart: unless-stopped
+    networks:
+      - timebase
+    profiles:
+      - observability
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: timebase-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    networks:
+      - timebase
+    profiles:
+      - observability
+
+  # Grafana - Visualization & Dashboards
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: timebase-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - jaeger
+    restart: unless-stopped
+    networks:
+      - timebase
+    profiles:
+      - observability
+
   # TimeBase core service
   core:
     build:
@@ -42,6 +102,9 @@ services:
       Providers__RegistryPath: /data/providers
       Logging__LogLevel__Default: Debug
       Logging__LogLevel__TimeBase: Debug
+      # OpenTelemetry configuration
+      OpenTelemetry__Tracing__OtlpEndpoint: http://jaeger:4317
+      OpenTelemetry__Metrics__OtlpEndpoint: http://jaeger:4317
     volumes:
       - ../providers:/data/providers:ro  # Mount providers for development
     healthcheck:
@@ -78,6 +141,10 @@ services:
 
 volumes:
   timescale-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
     driver: local
 
 networks:

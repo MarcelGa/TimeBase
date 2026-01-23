@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'timebase-dev'
+
+scrape_configs:
+  # TimeBase Core metrics (ASP.NET Core)
+  - job_name: 'timebase-core'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['core:8080']
+        labels:
+          service: 'core'
+          environment: 'development'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # TimescaleDB metrics (if postgres_exporter is added)
+  # - job_name: 'timescaledb'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
