@@ -282,8 +282,8 @@ docker-compose up -d
 
 3. **Build core**:
 ```bash
-dotnet restore TimeBase.sln
-dotnet build TimeBase.sln
+dotnet restore TimeBase.slnx
+dotnet build TimeBase.slnx
 ```
 
 4. **Run core**:
@@ -302,7 +302,7 @@ pip install -e .
 
 ```bash
 # Run core tests
-dotnet test TimeBase.sln
+dotnet test TimeBase.slnx
 
 # Run provider SDK tests
 cd src/TimeBase.ProviderSdk

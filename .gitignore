@@ -42,7 +42,7 @@ bld/
 
 # Visual Studio 2017/2019
 *.sln
-!TimeBase.sln
+!TimeBase.slnx
 
 # Rider
 .idea/

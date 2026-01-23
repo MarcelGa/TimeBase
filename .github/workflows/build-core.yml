@@ -6,14 +6,16 @@ on:
     paths:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
-      - 'TimeBase.sln'
+      - 'src/TimeBase.Core.Infrastructure/**'
+      - 'TimeBase.slnx'
       - '.github/workflows/build-core.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/TimeBase.Core/**'
       - 'src/TimeBase.Contracts/**'
-      - 'TimeBase.sln'
+      - 'src/TimeBase.Core.Infrastructure/**'
+      - 'TimeBase.slnx'
       - '.github/workflows/build-core.yml'
 
 jobs:
@@ -23,10 +25,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        dotnet-version: ['8.0.x']
+        dotnet-version: ['10.0.x']
         include:
           - os: ubuntu-latest
-            dotnet-version: '8.0.x'
+            dotnet-version: '10.0.x'
 
     steps:
       - name: Checkout code
@@ -38,13 +40,13 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Restore dependencies
-        run: dotnet restore TimeBase.sln
+        run: dotnet restore TimeBase.slnx
 
       - name: Build solution
-        run: dotnet build TimeBase.sln --configuration Release --no-restore
+        run: dotnet build TimeBase.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test TimeBase.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -54,7 +56,7 @@ jobs:
           path: '**/*.trx'
 
       - name: Check code formatting
-        run: dotnet format --verify-no-changes TimeBase.sln
+        run: dotnet format --verify-no-changes TimeBase.slnx
         continue-on-error: true
 
       - name: Build Docker image (ubuntu only)
