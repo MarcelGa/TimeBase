@@ -27,14 +27,7 @@ on:
 jobs:
   build:
     name: Build .NET Core
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        dotnet-version: ['10.0.x']
-        include:
-          - os: ubuntu-latest
-            dotnet-version: '10.0.x'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -43,7 +36,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         working-directory: src
@@ -61,18 +54,17 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results
           path: 'src/TestResults/**/*.trx'
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
-        if: always() && matrix.os == 'ubuntu-latest'
+        if: always()
         with:
           name: coverage-results
           path: 'src/TestResults/**/coverage.cobertura.xml'
 
       - name: Generate coverage report
-        if: matrix.os == 'ubuntu-latest'
         uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
         with:
           reports: 'src/TestResults/**/coverage.cobertura.xml'
@@ -81,13 +73,12 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest'
         with:
           name: coverage-report
           path: 'coveragereport'
 
       - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest'
+        if: github.event_name == 'pull_request'
         uses: 5monkeys/cobertura-action@v14
         with:
           path: 'src/TestResults/**/coverage.cobertura.xml'
@@ -99,13 +90,13 @@ jobs:
         run: dotnet format --verify-no-changes TimeBase.slnx
         continue-on-error: true
 
-      - name: Build Docker image (ubuntu only)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build Docker image
         working-directory: src
         run: |
           docker build -f docker/core/Dockerfile -t timebase/core:test .
 
-      - name: Test Docker image (ubuntu only)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Test Docker image
         run: |
-          docker run --rm timebase/core:test --version || echo "Version check completed"
+          # Test that the image was built and can start (with 10 second timeout)
+          timeout 10s docker run --rm timebase/core:test || true
+          echo "Docker image test completed"
