@@ -15,16 +15,19 @@ RUN useradd --create-home --shell /bin/bash app
 # Set work directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
+# Copy and install TimeBase SDK from local source
+COPY src/TimeBase.ProviderSdk /tmp/timebase-sdk
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir /tmp/timebase-sdk && \
+    rm -rf /tmp/timebase-sdk
+
+# Copy requirements and install other dependencies
+COPY providers/yahoo-finance/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY src/ ./src/
-COPY config.yaml .
+COPY providers/yahoo-finance/src/ ./src/
+COPY providers/yahoo-finance/config.yaml .
 
 # Change ownership to app user
 RUN chown -R app:app /app

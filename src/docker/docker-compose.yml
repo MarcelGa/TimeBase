@@ -120,8 +120,8 @@ services:
   # Minimal provider for testing
   minimal-provider:
     build:
-      context: ../../providers/examples/minimal-provider
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: providers/examples/minimal-provider/Dockerfile
     container_name: timebase-minimal-provider
     ports:
       - "50052:50051"  # Map to different port to avoid conflicts
@@ -142,8 +142,8 @@ services:
   # Yahoo Finance provider
   yahoo-finance-provider:
     build:
-      context: ../../providers/yahoo-finance
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: providers/yahoo-finance/Dockerfile
     container_name: timebase-yahoo-finance
     ports:
       - "50053:50051"  # Map to different port to avoid conflicts
