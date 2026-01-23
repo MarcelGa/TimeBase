@@ -268,10 +268,21 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 - Provider health and response times
 
 **Logging Strategy**:
-- Structured JSON logging with Serilog
-- Request correlation IDs
+- Structured logging with Serilog
+- Console output only (no file logging for containerized deployment)
+- Enrichers: Machine name, Thread ID, Process ID
+- Request correlation IDs via Serilog.AspNetCore
 - Error tracking with stack traces
-- Configurable log levels
+- Configurable log levels per namespace
+- OpenTelemetry integration for distributed tracing
+
+**Observability Stack**:
+- Serilog for structured logging
+- OpenTelemetry for tracing and metrics
+- ASP.NET Core metrics instrumentation
+- EF Core query performance tracking
+- Console exporters for development
+- OTLP exporters available for production (Jaeger, Grafana)
 
 **Health Checks**:
 - Application startup/shutdown
@@ -343,7 +354,87 @@ GET /api/symbols/AAPL/providers  # List available providers for symbol
 - CLA: Protects project's ability to relicense if needed
 - GitHub Community Standards: Follow best practices
 
-### 18. Community & Ecosystem
+### 18. Project Structure & Layering
+
+#### Clean Architecture with Separated Concerns
+
+**Decision**: Organize the .NET solution into separate projects following Clean Architecture principles.
+
+**Rationale**:
+- **Separation of Concerns**: Clear boundaries between web/API, business logic, and data access
+- **Testability**: Each layer can be tested independently
+- **Maintainability**: Changes in one layer don't ripple through the entire system
+- **Dependency Direction**: Dependencies flow inward (Core → Infrastructure, not the other way)
+
+**Project Structure**:
+
+```
+src/
+├── TimeBase.Core/                          # Web API & Application Layer
+│   ├── Services/                           # Business logic services
+│   │   ├── ProviderRegistry.cs            # Provider management
+│   │   ├── DataCoordinator.cs             # Data queries and coordination
+│   │   └── DependencyExtensions.cs        # Service registration
+│   ├── Endpoints.cs                        # REST API endpoints
+│   ├── Program.cs                          # Application entry point
+│   └── appsettings.json                    # Configuration
+│
+├── TimeBase.Core.Infrastructure/           # Data Access Layer
+│   ├── Data/
+│   │   ├── TimeBaseDbContext.cs           # EF Core DbContext
+│   │   └── TimeBaseDbContextFactory.cs    # Design-time factory for migrations
+│   ├── Entities/                           # Database entities
+│   │   ├── Provider.cs                    # Provider entity
+│   │   ├── Symbol.cs                      # Symbol entity
+│   │   └── TimeSeriesData.cs              # Time series data entity
+│   └── Migrations/                         # EF Core migrations
+│
+└── TimeBase.Contracts/                     # gRPC Protocol Definitions
+    └── protos/                             # .proto files
+```
+
+**Layering Rules**:
+
+1. **TimeBase.Core** (Application/API Layer)
+   - Contains: Controllers, endpoints, services, DTOs
+   - References: TimeBase.Core.Infrastructure, TimeBase.Contracts
+   - Responsibilities: HTTP handling, business logic orchestration
+   - No direct database code
+
+2. **TimeBase.Core.Infrastructure** (Data Access Layer)
+   - Contains: DbContext, entities, migrations, repositories
+   - References: None (except EF Core packages)
+   - Responsibilities: Database operations, data persistence
+   - Exposes entities and DbContext to Core
+
+3. **TimeBase.Contracts** (Shared Protocols)
+   - Contains: gRPC protocol definitions (.proto files)
+   - References: None
+   - Responsibilities: API contracts between Core and Providers
+   - Language-agnostic definitions
+
+**Migration History**:
+- **2026-01-23**: Extracted data layer into `TimeBase.Core.Infrastructure` project
+  - Moved all EF Core entities from `TimeBase.Core/Entities/` to `TimeBase.Core.Infrastructure/Entities/`
+  - Moved DbContext and factory from `TimeBase.Core/Data/` to `TimeBase.Core.Infrastructure/Data/`
+  - Moved all migrations to Infrastructure project with namespace updates
+  - Removed EF Core packages from Core project
+  - Core now references Infrastructure for database access
+
+**Namespace Conventions**:
+- Core entities: `TimeBase.Core.Infrastructure.Entities`
+- Core data access: `TimeBase.Core.Infrastructure.Data`
+- Business services: `TimeBase.Core.Services`
+- API endpoints: `TimeBase.Core`
+- gRPC contracts: `TimeBase.Contracts`
+
+**Future Considerations**:
+- Repository pattern may be added if query logic becomes complex
+- CQRS pattern could be introduced for read/write separation
+- Domain events could be added for decoupled communication
+- Additional layers (e.g., TimeBase.Core.Domain) if domain logic grows
+
+### 19. Community & Ecosystem
 
 #### Provider Registry & Marketplace
 
