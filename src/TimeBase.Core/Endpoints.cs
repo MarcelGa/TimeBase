@@ -10,10 +10,10 @@ using TimeBase.Core.Services;
 
 public static class EndpointsExtensions
 {
-    public static void AddTimeBaseEndpoints(this WebApplication app)
+    public static IEndpointRouteBuilder AddTimeBaseEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
     {
         // Get all providers
-        app.MapGet("/api/providers", async (ProviderRegistry registry) => 
+        endpointRouteBuilder.MapGet("/api/providers", async (ProviderRegistry registry) => 
         {
             var providers = await registry.GetAllProvidersAsync();
             return Results.Ok(new { providers });
@@ -23,7 +23,7 @@ public static class EndpointsExtensions
         .Produces<object>(200);
 
         // Get provider by ID
-        app.MapGet("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
+        endpointRouteBuilder.MapGet("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
         {
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
@@ -37,7 +37,7 @@ public static class EndpointsExtensions
         .Produces(404);
 
         // Install a new provider
-        app.MapPost("/api/providers", async (
+        endpointRouteBuilder.MapPost("/api/providers", async (
             InstallProviderRequest request,
             IValidator<InstallProviderRequest> validator,
             ProviderRegistry registry) => 
@@ -79,7 +79,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Uninstall a provider
-        app.MapDelete("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) => 
+        endpointRouteBuilder.MapDelete("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) => 
         {
             var success = await registry.UninstallProviderAsync(id);
             if (!success)
@@ -93,7 +93,7 @@ public static class EndpointsExtensions
         .Produces(404);
 
         // Enable/disable a provider
-        app.MapPatch("/api/providers/{id:guid}/enabled", async (
+        endpointRouteBuilder.MapPatch("/api/providers/{id:guid}/enabled", async (
             Guid id,
             SetProviderEnabledRequest request,
             IValidator<SetProviderEnabledRequest> validator,
@@ -128,7 +128,7 @@ public static class EndpointsExtensions
         .Produces(404);
 
         // Get historical data
-        app.MapGet("/api/data/{symbol}", async (
+        endpointRouteBuilder.MapGet("/api/data/{symbol}", async (
             string symbol,
             string? interval,
             DateTime? start,
@@ -186,7 +186,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Get data summary for a symbol
-        app.MapGet("/api/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
+        endpointRouteBuilder.MapGet("/api/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
         {
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
@@ -200,7 +200,7 @@ public static class EndpointsExtensions
         .Produces(404);
 
         // Get available providers for a symbol
-        app.MapGet("/api/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
+        endpointRouteBuilder.MapGet("/api/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
         {
             var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
             return Results.Ok(new 
@@ -213,5 +213,7 @@ public static class EndpointsExtensions
         .WithName("GetProvidersForSymbol")
         .WithTags("Data")
         .Produces<object>(200);
+
+        return endpointRouteBuilder;
     }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -16,6 +16,16 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+      
+      <!-- Health Checks -->
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.2" />
+      <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Extensions.Diagnostics.HealthChecks">
+      <HintPath>..\..\..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\10.0.2\Microsoft.Extensions.Diagnostics.HealthChecks.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

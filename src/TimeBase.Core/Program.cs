@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Services;
 using TimeBase.Core;
 using Serilog;
@@ -8,6 +6,9 @@ using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
 using FluentValidation;
 using AspNetCoreRateLimit;
+
+using TimeBase.Core.Health;
+using TimeBase.Core.Infrastructure;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
@@ -70,17 +71,6 @@ try
             // Always add Prometheus exporter for scraping
             metrics.AddPrometheusExporter();
         });
-
-    builder.Services.AddDbContext<TimeBaseDbContext>(opts =>
-        opts.UseNpgsql(builder.Configuration.GetConnectionString("TimeBaseDb")));
-    
-    // Add health checks
-    builder.Services.AddHealthChecks()
-        .AddDbContextCheck<TimeBaseDbContext>(name: "database", tags: new[] { "db", "ready" })
-        .AddNpgSql(
-            builder.Configuration.GetConnectionString("TimeBaseDb") ?? throw new InvalidOperationException("Database connection string not configured"),
-            name: "timescaledb",
-            tags: new[] { "db", "ready" });
     
     // Add FluentValidation
     builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -95,6 +85,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    builder.Services.AddHealthChecks(out IHealthChecksBuilder healthChecks);
+    builder.Services.AddInfrastructure(builder.Configuration, healthChecks);
+    
     var app = builder.Build();
 
     // Add Serilog request logging
@@ -103,81 +96,15 @@ try
     // Add rate limiting
     app.UseIpRateLimiting();
 
-    // Add Prometheus scraping endpoint
-    app.MapPrometheusScrapingEndpoint();
+    // Use infrastructure (e.g. apply migrations)
+    app.Services.UseInfrastructure();
 
-    // Add health check endpoints
-    app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        Predicate = _ => false, // No checks, just returns that the app is running
-        AllowCachingResponses = false
-    });
+    // Add endpoints
+    app
+        .AddHealthCheckEndpoints()
+        .AddTimeBaseEndpoints()
+        .MapPrometheusScrapingEndpoint();
     
-    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        Predicate = check => check.Tags.Contains("ready"), // Only checks tagged with "ready"
-        AllowCachingResponses = false,
-        ResponseWriter = async (context, report) =>
-        {
-            context.Response.ContentType = "application/json";
-            var result = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                status = report.Status.ToString(),
-                checks = report.Entries.Select(e => new
-                {
-                    name = e.Key,
-                    status = e.Value.Status.ToString(),
-                    description = e.Value.Description,
-                    duration = e.Value.Duration.TotalMilliseconds
-                }),
-                totalDuration = report.TotalDuration.TotalMilliseconds
-            });
-            await context.Response.WriteAsync(result);
-        }
-    });
-    
-    app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        Predicate = _ => true, // All health checks
-        AllowCachingResponses = false,
-        ResponseWriter = async (context, report) =>
-        {
-            context.Response.ContentType = "application/json";
-            var result = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                status = report.Status.ToString(),
-                checks = report.Entries.Select(e => new
-                {
-                    name = e.Key,
-                    status = e.Value.Status.ToString(),
-                    description = e.Value.Description,
-                    duration = e.Value.Duration.TotalMilliseconds
-                }),
-                totalDuration = report.TotalDuration.TotalMilliseconds
-            });
-            await context.Response.WriteAsync(result);
-        }
-    });
-
-    // Apply EF migrations with proper logging
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        
-        try 
-        { 
-            logger.LogInformation("Applying database migrations...");
-            db.Database.Migrate(); 
-            logger.LogInformation("Database migrations applied successfully");
-        } 
-        catch (Exception ex) 
-        {
-            logger.LogError(ex, "Failed to apply database migrations");
-        }
-    }
-
-    app.AddTimeBaseEndpoints();
 
     if (app.Environment.IsDevelopment())
     {
@@ -185,7 +112,7 @@ try
         app.UseSwaggerUI();
     }
 
-    app.Run();
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
@@ -194,7 +121,7 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
 
 return 0;

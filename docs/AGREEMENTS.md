@@ -396,8 +396,12 @@ src/
 │   ├── Services/                           # Business logic services
 │   │   ├── ProviderRegistry.cs            # Provider management
 │   │   ├── DataCoordinator.cs             # Data queries and coordination
+│   │   ├── TimeBaseMetrics.cs             # Custom business metrics
 │   │   └── DependencyExtensions.cs        # Service registration
-│   ├── Endpoints.cs                        # REST API endpoints
+│   ├── Health/                             # Health check configuration
+│   │   ├── DependencyExtensions.cs        # Health check registration
+│   │   └── Endpoints.cs                    # Health check endpoint mappings
+│   ├── Endpoints.cs                        # REST API endpoints (fluent API pattern)
 │   ├── Program.cs                          # Application entry point
 │   └── appsettings.json                    # Configuration
 │
@@ -409,7 +413,8 @@ src/
 │   │   ├── Provider.cs                    # Provider entity
 │   │   ├── Symbol.cs                      # Symbol entity
 │   │   └── TimeSeriesData.cs              # Time series data entity
-│   └── Migrations/                         # EF Core migrations
+│   ├── Migrations/                         # EF Core migrations
+│   └── DependencyExtensions.cs             # Infrastructure setup and configuration
 │
 └── TimeBase.Contracts/                     # gRPC Protocol Definitions
     └── protos/                             # .proto files
@@ -418,16 +423,18 @@ src/
 **Layering Rules**:
 
 1. **TimeBase.Core** (Application/API Layer)
-   - Contains: Controllers, endpoints, services, DTOs
+   - Contains: Controllers, endpoints, services, DTOs, health checks
    - References: TimeBase.Core.Infrastructure, TimeBase.Contracts
    - Responsibilities: HTTP handling, business logic orchestration
    - No direct database code
+   - Uses fluent API pattern for endpoint registration
 
 2. **TimeBase.Core.Infrastructure** (Data Access Layer)
-   - Contains: DbContext, entities, migrations, repositories
+   - Contains: DbContext, entities, migrations, repositories, infrastructure configuration
    - References: None (except EF Core packages)
-   - Responsibilities: Database operations, data persistence
+   - Responsibilities: Database operations, data persistence, infrastructure setup
    - Exposes entities and DbContext to Core
+   - Provides extension methods for service registration
 
 3. **TimeBase.Contracts** (Shared Protocols)
    - Contains: gRPC protocol definitions (.proto files)
@@ -442,13 +449,38 @@ src/
   - Moved all migrations to Infrastructure project with namespace updates
   - Removed EF Core packages from Core project
   - Core now references Infrastructure for database access
+- **2026-01-23**: Refactored code organization for better separation of concerns
+  - Created `TimeBase.Core/Health/` namespace for health check configuration
+  - Moved health check registration to dedicated `Health/DependencyExtensions.cs`
+  - Moved health check endpoint mappings to `Health/Endpoints.cs`
+  - Created `TimeBase.Core.Infrastructure/DependencyExtensions.cs` for infrastructure setup
+  - Simplified `Program.cs` by extracting configuration to extension methods
+  - Implemented fluent API pattern for endpoint registration
+  - Changed to async methods throughout (`RunAsync`, `CloseAndFlushAsync`)
 
 **Namespace Conventions**:
 - Core entities: `TimeBase.Core.Infrastructure.Entities`
 - Core data access: `TimeBase.Core.Infrastructure.Data`
+- Infrastructure configuration: `TimeBase.Core.Infrastructure`
 - Business services: `TimeBase.Core.Services`
+- Health checks: `TimeBase.Core.Health`
 - API endpoints: `TimeBase.Core`
 - gRPC contracts: `TimeBase.Contracts`
+
+**Code Organization Patterns** (Established 2026-01-23):
+- **Extension Methods**: Use extension methods for feature registration
+  - `AddHealthChecks()` - Register health check services
+  - `AddInfrastructure()` - Configure infrastructure services
+  - `UseInfrastructure()` - Apply infrastructure configuration (migrations, etc.)
+  - `AddTimeBaseEndpoints()` - Register API endpoints
+  - `AddHealthCheckEndpoints()` - Register health check endpoints
+- **Fluent API**: Endpoint registration returns `IEndpointRouteBuilder` for chaining
+- **Separation by Feature**: Group related functionality in dedicated namespaces
+  - Health checks in `TimeBase.Core.Health`
+  - Business services in `TimeBase.Core.Services`
+  - Infrastructure in `TimeBase.Core.Infrastructure`
+- **Async by Default**: Use async methods throughout (`RunAsync`, `CloseAndFlushAsync`)
+- **Clean Program.cs**: Keep application entry point minimal and declarative
 
 **Future Considerations**:
 - Repository pattern may be added if query logic becomes complex
