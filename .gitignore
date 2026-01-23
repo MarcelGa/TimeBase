@@ -340,7 +340,9 @@ cython_debug/
 Thumbs.db
 
 # Project specific
-data/
+# Ignore data directories at root and in docker, but not source code Data directories
+/data/
+src/docker/data/
 logs/
 *.db
 *.sqlite
