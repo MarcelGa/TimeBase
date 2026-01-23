@@ -1,6 +1,5 @@
 # Build stage
-# Note: Using .NET 9 SDK to build .NET 10 project until .NET 10 images are available
-FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.102-noble-amd64 AS build
 WORKDIR /src
 
 # Copy solution & project files
@@ -18,8 +17,7 @@ WORKDIR /src/TimeBase.Core
 RUN dotnet publish TimeBase.Core.csproj -c Release -o /app/publish
 
 ## Runtime stage
-# Note: Using .NET 9 runtime until .NET 10 images are available
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.2-noble-chiseled-extra-amd64 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish ./
 

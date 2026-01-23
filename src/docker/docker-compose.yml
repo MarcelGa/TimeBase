@@ -84,42 +84,38 @@ services:
       - observability
 
   # TimeBase core service
-  # NOTE: Currently disabled in docker-compose due to .NET 10 Docker images not being available yet.
-  # For local development, run TimeBase.Core directly with `dotnet run` from src/TimeBase.Core/
-  # Once .NET 10 images are released, uncomment this service to run in Docker.
-  #
-  # core:
-  #   build:
-  #     context: ..
-  #     dockerfile: docker/core/Dockerfile
-  #   container_name: timebase-core
-  #   ports:
-  #     - "8080:8080"   # REST API
-  #     - "50051:50051" # gRPC
-  #   depends_on:
-  #     timescaledb:
-  #       condition: service_healthy
-  #   environment:
-  #     ASPNETCORE_ENVIRONMENT: Development
-  #     ASPNETCORE_URLS: http://+:8080
-  #     ConnectionStrings__TimeBaseDb: Host=timescaledb;Database=timebase;Username=timebase;Password=timebase_dev
-  #     Providers__RegistryPath: /data/providers
-  #     Logging__LogLevel__Default: Debug
-  #     Logging__LogLevel__TimeBase: Debug
-  #     # OpenTelemetry configuration
-  #     OpenTelemetry__Tracing__OtlpEndpoint: http://jaeger:4317
-  #     OpenTelemetry__Metrics__OtlpEndpoint: http://jaeger:4317
-  #   volumes:
-  #     - ../providers:/data/providers:ro  # Mount providers for development
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 30s
-  #   restart: unless-stopped
-  #   networks:
-  #     - timebase
+  core:
+    build:
+      context: ..
+      dockerfile: docker/core/Dockerfile
+    container_name: timebase-core
+    ports:
+      - "8080:8080"   # REST API
+      - "50051:50051" # gRPC
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TimeBaseDb: Host=timescaledb;Database=timebase;Username=timebase;Password=timebase_dev
+      Providers__RegistryPath: /data/providers
+      Logging__LogLevel__Default: Debug
+      Logging__LogLevel__TimeBase: Debug
+      # OpenTelemetry configuration
+      OpenTelemetry__Tracing__OtlpEndpoint: http://jaeger:4317
+      OpenTelemetry__Metrics__OtlpEndpoint: http://jaeger:4317
+    volumes:
+      - ../providers:/data/providers:ro  # Mount providers for development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - timebase
 
   # Minimal provider for testing
   minimal-provider:
