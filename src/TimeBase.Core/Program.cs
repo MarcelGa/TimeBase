@@ -72,6 +72,7 @@ try
         opts.UseNpgsql(builder.Configuration.GetConnectionString("TimeBaseDb")));
     
     builder.Services.AddServices();
+    builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
     var app = builder.Build();
