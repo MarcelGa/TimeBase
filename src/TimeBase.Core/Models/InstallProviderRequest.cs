@@ -17,11 +17,14 @@ public class InstallProviderRequestValidator : AbstractValidator<InstallProvider
     private bool BeValidUrl(string url)
     {
         return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
-            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            && uriResult.Scheme == Uri.UriSchemeHttps; // Only HTTPS allowed for security
     }
 
     private bool BeGitUrl(string url)
     {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+            
         var lowerUrl = url.ToLowerInvariant();
         return lowerUrl.Contains("github.com") 
             || lowerUrl.Contains("gitlab.com") 

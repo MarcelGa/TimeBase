@@ -4,7 +4,7 @@ public static class DependencyExtensions
 {
     public static IServiceCollection AddServices(this IServiceCollection services) 
         => services
-            .AddSingleton<TimeBaseMetrics>()
+            .AddSingleton<ITimeBaseMetrics, TimeBaseMetrics>()
             .AddScoped<ProviderRegistry>()
             .AddScoped<DataCoordinator>();
 }

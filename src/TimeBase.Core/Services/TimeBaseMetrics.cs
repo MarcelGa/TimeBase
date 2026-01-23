@@ -6,7 +6,7 @@ namespace TimeBase.Core.Services;
 /// Centralized metrics for TimeBase operations.
 /// Uses OpenTelemetry Meter API for custom business metrics.
 /// </summary>
-public class TimeBaseMetrics
+public class TimeBaseMetrics : ITimeBaseMetrics
 {
     private readonly Meter _meter;
     

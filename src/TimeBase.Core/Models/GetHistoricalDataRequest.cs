@@ -31,17 +31,19 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
             .NotEmpty().WithMessage("Interval is required")
             .Must(BeValidInterval).WithMessage($"Interval must be one of: {string.Join(", ", ValidIntervals)}");
 
-        RuleFor(x => x)
-            .Must(x => !x.Start.HasValue || !x.End.HasValue || x.Start.Value <= x.End.Value)
-            .WithMessage("Start date must be before or equal to end date");
-
         RuleFor(x => x.Start)
+            .Must(date => !date.HasValue || date.Value <= DateTime.UtcNow.AddDays(1))
+            .WithMessage("Start date cannot be in the future")
             .Must(BeReasonableStartDate).WithMessage("Start date cannot be more than 10 years in the past")
             .When(x => x.Start.HasValue);
 
         RuleFor(x => x.End)
-            .Must(date => date!.Value <= DateTime.UtcNow.AddDays(1))
+            .Must(date => !date.HasValue || date.Value <= DateTime.UtcNow.AddDays(1))
             .WithMessage("End date cannot be in the future")
+            .Must((request, end) => !request.Start.HasValue || !end.HasValue || request.Start.Value <= end.Value)
+            .WithMessage("End date must be after or equal to start date")
+            .Must((request, end) => !request.Start.HasValue || !end.HasValue || (end.Value - request.Start.Value).TotalDays <= 3650)
+            .WithMessage("Date range cannot exceed 10 years")
             .When(x => x.End.HasValue);
     }
 

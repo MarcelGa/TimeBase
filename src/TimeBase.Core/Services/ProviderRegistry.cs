@@ -8,7 +8,7 @@ namespace TimeBase.Core.Services;
 public class ProviderRegistry(
     TimeBaseDbContext db, 
     ILogger<ProviderRegistry> logger,
-    TimeBaseMetrics metrics)
+    ITimeBaseMetrics metrics)
 {
     /// <summary>
     /// Install a provider from a repository URL.
