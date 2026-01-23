@@ -2,10 +2,12 @@
   <Folder Name="/Solution Items/">
     <File Path="docker/core/Dockerfile" />
     <File Path="docker/docker-compose.yml" />
+    <File Path="../.github/workflows/build-core.yml" />
     <File Path=".editorconfig" />
   </Folder>
-  <Project Path="TimeBase.Core\TimeBase.Core.csproj" Type="C#" />
-  <Project Path="TimeBase.Contracts\TimeBase.Contracts.csproj" Type="C#" />
-  <Project Path="TimeBase.Core.Infrastructure\TimeBase.Core.Infrastructure.csproj" Type="C#" />
-  <Project Path="TimeBase.Core.Tests\TimeBase.Core.Tests.csproj" Type="C#" />
+  <Project Path="TimeBase.Core\TimeBase.Core.csproj" />
+  <Project Path="TimeBase.Contracts\TimeBase.Contracts.csproj" />
+  <Project Path="TimeBase.Core.Infrastructure\TimeBase.Core.Infrastructure.csproj" />
+  <Project Path="TimeBase.Core.Tests.Integration\TimeBase.Core.Tests.Integration.csproj" />
+  <Project Path="TimeBase.Core.Tests.Unit\TimeBase.Core.Tests.Unit.csproj" />
 </Solution>

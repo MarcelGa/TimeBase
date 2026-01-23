@@ -125,3 +125,6 @@ finally
 }
 
 return 0;
+
+// Make Program class accessible to integration tests
+public partial class Program { }
