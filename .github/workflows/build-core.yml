@@ -35,8 +35,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Verify Docker availability
+        run: |
+          docker info
+          docker ps
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
