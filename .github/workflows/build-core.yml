@@ -35,6 +35,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -47,6 +50,9 @@ jobs:
       - name: Build solution
         working-directory: src
         run: dotnet build TimeBase.slnx --configuration Release --no-restore
+
+      - name: Pull TimescaleDB Docker image
+        run: docker pull timescale/timescaledb:latest-pg16
 
       - name: Run tests
         working-directory: src

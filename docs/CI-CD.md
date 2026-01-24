@@ -7,15 +7,18 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
 ### Core Service Build (`build-core.yml`)
 
 **Triggers:**
-- Push to `main` branch
-- Pull requests to `main` branch
+- Push to `master` branch
+- Pull requests to `master` branch
 - Changes to core service files
 
 **What it does:**
-1. **Build & Test** (Ubuntu + Windows)
+1. **Build & Test** (Ubuntu only)
+   - Sets up Docker Buildx for container support
+   - Installs .NET 10.0 preview SDK
    - Restores NuGet dependencies
    - Builds solution in Release mode
-   - Runs all unit tests (47 tests)
+   - Pre-pulls TimescaleDB Docker image for integration tests
+   - Runs all unit and integration tests
    - Collects code coverage
 
 2. **Coverage Reporting** (Ubuntu only)
@@ -23,22 +26,22 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
    - Uploads coverage artifacts
    - Comments coverage on PRs (minimum 70%)
 
-3. **Code Quality** (Ubuntu + Windows)
+3. **Code Quality** (Ubuntu only)
    - Verifies code formatting with `dotnet format`
 
 4. **Docker Build** (Ubuntu only)
    - Builds Docker image
    - Tests image startup
 
-**Matrix:**
-- OS: Ubuntu Latest, Windows Latest
+**Requirements:**
+- OS: Ubuntu Latest
 - .NET: 10.0.x
+- Docker: Required for integration tests (Testcontainers)
 
 ### Test Results
 
 Test results are uploaded as artifacts on every run:
-- `test-results-ubuntu-latest` - Test results from Ubuntu
-- `test-results-windows-latest` - Test results from Windows
+- `test-results` - Test results from test runs
 - `coverage-results` - Code coverage data (Cobertura format)
 - `coverage-report` - HTML coverage report
 
