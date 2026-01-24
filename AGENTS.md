@@ -43,9 +43,13 @@ dotnet format TimeBase.slnx
 ### Testing
 
 ```bash
-# Run all tests
+# Run all tests (requires Docker for integration tests)
 cd src
 dotnet test TimeBase.slnx
+
+# Run unit tests only (no Docker required)
+cd src
+dotnet test TimeBase.slnx --filter "FullyQualifiedName!~Integration"
 
 # Run tests with coverage
 dotnet test TimeBase.slnx --collect:"XPlat Code Coverage" --results-directory ./TestResults

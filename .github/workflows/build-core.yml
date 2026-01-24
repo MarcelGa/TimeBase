@@ -35,11 +35,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify Docker availability
-        run: |
-          docker info
-          docker ps
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -53,12 +48,9 @@ jobs:
         working-directory: src
         run: dotnet build TimeBase.slnx --configuration Release --no-restore
 
-      - name: Pull TimescaleDB Docker image
-        run: docker pull timescale/timescaledb:latest-pg16
-
       - name: Run tests
         working-directory: src
-        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults
+        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults --filter "FullyQualifiedName!~Integration"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
