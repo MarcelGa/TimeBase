@@ -48,9 +48,12 @@ jobs:
         working-directory: src
         run: dotnet build TimeBase.slnx --configuration Release --no-restore
 
-      - name: Run tests
+      - name: Pull TimescaleDB image for integration tests
+        run: docker pull timescale/timescaledb:latest-pg16
+
+      - name: Run tests (including integration tests)
         working-directory: src
-        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults --filter "FullyQualifiedName!~Integration"
+        run: dotnet test TimeBase.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

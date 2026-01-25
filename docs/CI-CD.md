@@ -13,11 +13,11 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
 
 **What it does:**
 1. **Build & Test** (Ubuntu only)
-   - Verifies Docker is available
    - Installs .NET 10.0 SDK
    - Restores NuGet dependencies
    - Builds solution in Release mode
-   - Runs unit tests only (integration tests require local Docker and are skipped in CI)
+   - Pulls TimescaleDB Docker image for integration tests
+   - Runs all unit and integration tests using Testcontainers
    - Collects code coverage
 
 2. **Coverage Reporting** (Ubuntu only)
@@ -35,8 +35,7 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
 **Requirements:**
 - OS: Ubuntu Latest
 - .NET: 10.0.x
-
-**Note**: Integration tests are excluded from CI because they require Docker with Testcontainers. Run integration tests locally with Docker available.
+- Docker: Available in GitHub Actions for Testcontainers
 
 ### Test Results
 
