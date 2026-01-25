@@ -7,17 +7,18 @@ namespace TimeBase.Core.Services;
 
 /// <summary>
 /// DataCoordinator handles data queries and coordinates with providers.
-/// In MVP: Queries TimescaleDB directly.
-/// Future: Routes requests to providers via gRPC, maintains connection pool.
+/// Checks database first, then fetches from providers via gRPC if needed.
 /// </summary>
 public class DataCoordinator(
     TimeBaseDbContext db, 
-    ProviderRegistry providerRegistry, 
+    ProviderRegistry providerRegistry,
+    IProviderClient providerClient,
     ILogger<DataCoordinator> logger,
     ITimeBaseMetrics metrics)
 {
     /// <summary>
     /// Get historical time series data for a symbol.
+    /// Strategy: Check database first, fetch from provider if missing.
     /// </summary>
     public async Task<List<TimeSeriesData>> GetHistoricalAsync(
         string symbol, 
@@ -33,11 +34,11 @@ public class DataCoordinator(
         var startTime = DateTime.UtcNow;
         try
         {
+            // 1. Check database first
             var query = db.TimeSeries
                 .Where(d => d.Symbol == symbol && d.Interval == interval)
                 .Where(d => d.Time >= start && d.Time <= end);
 
-            // Optionally filter by provider
             if (providerId.HasValue)
             {
                 query = query.Where(d => d.ProviderId == providerId.Value);
@@ -47,11 +48,62 @@ public class DataCoordinator(
                 .OrderBy(d => d.Time)
                 .ToListAsync();
 
-            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
+            // 2. If data exists in database, return it
+            if (data.Count > 0)
+            {
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
+                logger.LogInformation("Fetched {Count} data points for {Symbol} from database", data.Count, symbol);
+                return data;
+            }
 
-            logger.LogInformation("Fetched {Count} data points for {Symbol}", data.Count, symbol);
-            return data;
+            // 3. No data in database - fetch from provider
+            logger.LogInformation("No data in database for {Symbol}, fetching from provider", symbol);
+
+            // Get an enabled provider to fetch from
+            Provider? provider;
+            if (providerId.HasValue)
+            {
+                provider = await providerRegistry.GetProviderByIdAsync(providerId.Value);
+                if (provider == null || !provider.Enabled)
+                {
+                    logger.LogWarning("Provider {ProviderId} not found or disabled", providerId);
+                    return new List<TimeSeriesData>();
+                }
+            }
+            else
+            {
+                // Get first enabled provider
+                var providers = await providerRegistry.GetAllProvidersAsync(enabled: true);
+                provider = providers.FirstOrDefault();
+                if (provider == null)
+                {
+                    logger.LogWarning("No enabled providers available");
+                    return new List<TimeSeriesData>();
+                }
+            }
+
+            // 4. Fetch from provider via gRPC
+            var providerData = await providerClient.GetHistoricalDataAsync(
+                provider, symbol, interval, start, end);
+
+            if (providerData.Count == 0)
+            {
+                logger.LogInformation("Provider {Provider} returned no data for {Symbol}", provider.Slug, symbol);
+                return new List<TimeSeriesData>();
+            }
+
+            // 5. Store fetched data in database for future queries
+            await StoreTimeSeriesDataAsync(providerData);
+
+            var totalDuration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            metrics.RecordDataQuery(symbol, interval, providerData.Count, totalDuration, success: true);
+
+            logger.LogInformation(
+                "Fetched and stored {Count} data points for {Symbol} from provider {Provider}",
+                providerData.Count, symbol, provider.Slug);
+
+            return providerData;
         }
         catch (Exception ex)
         {

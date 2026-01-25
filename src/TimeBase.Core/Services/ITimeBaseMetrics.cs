@@ -34,4 +34,9 @@ public interface ITimeBaseMetrics
     /// Record an error.
     /// </summary>
     void RecordError(string operation, string errorType);
+
+    /// <summary>
+    /// Record a provider health check result.
+    /// </summary>
+    void RecordProviderHealth(string providerSlug, bool healthy);
 }

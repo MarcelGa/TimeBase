@@ -1,4 +1,5 @@
 timebase-sdk>=1.0.0
-yfinance>=0.2.48
+yfinance==0.2.40
 pandas>=2.0.0
 numpy>=1.24.0
+requests>=2.31.0

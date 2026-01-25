@@ -13,6 +13,7 @@ CREATE TABLE providers (
     version VARCHAR(50) NOT NULL,
     repository_url TEXT,
     image_url TEXT,  -- Optional Docker image URL
+    grpc_endpoint TEXT,  -- gRPC endpoint (e.g., "timebase-yahoo-finance:50051")
     enabled BOOLEAN DEFAULT true,
     config JSONB,  -- Provider-specific configuration
     capabilities JSONB,  -- Provider capabilities (nullable in MVP)

@@ -6,6 +6,7 @@ from concurrent import futures
 from typing import Optional
 import grpc
 from datetime import datetime
+from google.protobuf.timestamp_pb2 import Timestamp
 
 from .provider_base import TimeBaseProvider
 from .models import StreamControl, HealthStatus, ProviderCapabilitiesResponse
@@ -72,7 +73,7 @@ class DataProviderServicer(provider_pb2_grpc.DataProviderServicer if provider_pb
                 limit=request.limit if request.HasField("limit") else None
             ):
                 # Convert to protobuf message
-                timestamp = provider_pb2.Timestamp()
+                timestamp = Timestamp()
                 timestamp.FromDatetime(data_point["timestamp"])
 
                 time_series_data = provider_pb2.TimeSeriesData(
@@ -117,7 +118,7 @@ class DataProviderServicer(provider_pb2_grpc.DataProviderServicer if provider_pb
 
             async for data_point in self.provider.stream_realtime_data(subscription_stream()):
                 # Convert to protobuf message (same as historical)
-                timestamp = provider_pb2.Timestamp()
+                timestamp = Timestamp()
                 timestamp.FromDatetime(data_point["timestamp"])
 
                 time_series_data = provider_pb2.TimeSeriesData(
@@ -153,7 +154,7 @@ class DataProviderServicer(provider_pb2_grpc.DataProviderServicer if provider_pb
             health = await self.provider.health_check()
 
             # Convert to protobuf message
-            timestamp = provider_pb2.Timestamp()
+            timestamp = Timestamp()
             timestamp.FromDatetime(health["timestamp"])
 
             health_status = provider_pb2.HealthStatus(
@@ -175,7 +176,7 @@ class DataProviderServicer(provider_pb2_grpc.DataProviderServicer if provider_pb
             context.set_details(str(e))
 
             # Return unhealthy status
-            timestamp = provider_pb2.Timestamp()
+            timestamp = Timestamp()
             timestamp.FromDatetime(datetime.utcnow())
 
             return provider_pb2.HealthStatus(
@@ -230,7 +231,7 @@ class TimeBaseGrpcServer:
 
         # Start server
         await self.server.start()
-        self.logger.info(f"gRPC server started on {address}")
+        self.logger.info(f"✅ gRPC server started successfully on {address}")
 
         # Setup provider
         try:
@@ -286,6 +287,9 @@ def run_grpc_server(provider: TimeBaseProvider, port: int = 50051, host: str = "
             await server.wait_for_termination()
         except KeyboardInterrupt:
             pass
+        except Exception as e:
+            provider.logger.error(f"Server error: {e}", exc_info=True)
+            raise
         finally:
             await server.stop()
 

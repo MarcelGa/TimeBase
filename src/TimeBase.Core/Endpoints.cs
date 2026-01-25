@@ -127,6 +127,69 @@ public static class EndpointsExtensions
         .ProducesValidationProblem()
         .Produces(404);
 
+        // Refresh provider capabilities
+        endpointRouteBuilder.MapPost("/api/providers/{id:guid}/capabilities", async (
+            Guid id,
+            ProviderRegistry registry) =>
+        {
+            var provider = await registry.UpdateCapabilitiesAsync(id);
+            if (provider == null)
+                return Results.NotFound(new { error = $"Provider {id} not found" });
+            
+            var capabilities = registry.GetCachedCapabilities(provider);
+            return Results.Ok(new 
+            { 
+                message = "Provider capabilities updated successfully",
+                provider,
+                capabilities
+            });
+        })
+        .WithName("RefreshProviderCapabilities")
+        .WithTags("Providers")
+        .Produces<object>(200)
+        .Produces(404);
+
+        // Refresh all provider capabilities
+        endpointRouteBuilder.MapPost("/api/providers/capabilities/refresh", async (ProviderRegistry registry) =>
+        {
+            await registry.UpdateAllCapabilitiesAsync();
+            var providers = await registry.GetAllProvidersAsync(enabled: true);
+            
+            return Results.Ok(new 
+            { 
+                message = "All provider capabilities updated successfully",
+                count = providers.Count,
+                providers
+            });
+        })
+        .WithName("RefreshAllCapabilities")
+        .WithTags("Providers")
+        .Produces<object>(200);
+
+        // Check provider health
+        endpointRouteBuilder.MapGet("/api/providers/{id:guid}/health", async (
+            Guid id,
+            ProviderRegistry registry,
+            IProviderClient providerClient) =>
+        {
+            var provider = await registry.GetProviderByIdAsync(id);
+            if (provider == null)
+                return Results.NotFound(new { error = $"Provider {id} not found" });
+
+            var isHealthy = await providerClient.IsHealthyAsync(provider);
+            
+            return Results.Ok(new 
+            { 
+                provider = new { provider.Id, provider.Slug, provider.Name },
+                healthy = isHealthy,
+                checkedAt = DateTime.UtcNow
+            });
+        })
+        .WithName("CheckProviderHealth")
+        .WithTags("Providers")
+        .Produces<object>(200)
+        .Produces(404);
+
         // Get historical data
         endpointRouteBuilder.MapGet("/api/data/{symbol}", async (
             string symbol,

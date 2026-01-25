@@ -25,6 +25,7 @@ public class TimeBaseDbContext(DbContextOptions<TimeBaseDbContext> options) : Db
             entity.Property(e => e.Enabled).HasColumnName("enabled");
             entity.Property(e => e.RepositoryUrl).HasColumnName("repository_url").IsRequired().HasMaxLength(500);
             entity.Property(e => e.ImageUrl).HasColumnName("image_url").HasMaxLength(500);
+            entity.Property(e => e.GrpcEndpoint).HasColumnName("grpc_endpoint").HasMaxLength(500);
             entity.Property(e => e.Config).HasColumnName("config").HasColumnType("jsonb");
             entity.Property(e => e.Capabilities).HasColumnName("capabilities").HasColumnType("jsonb");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");

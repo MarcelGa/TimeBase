@@ -14,6 +14,7 @@ public class TimeBaseMetrics : ITimeBaseMetrics
     private readonly Counter<long> _providerInstallCounter;
     private readonly Counter<long> _providerUninstallCounter;
     private readonly UpDownCounter<int> _activeProvidersGauge;
+    private readonly Counter<long> _providerHealthCheckCounter;
     
     // Data operation metrics
     private readonly Counter<long> _dataQueryCounter;
@@ -40,6 +41,10 @@ public class TimeBaseMetrics : ITimeBaseMetrics
         _activeProvidersGauge = _meter.CreateUpDownCounter<int>(
             "timebase.provider.active",
             description: "Number of currently active providers");
+
+        _providerHealthCheckCounter = _meter.CreateCounter<long>(
+            "timebase.provider.health_checks",
+            description: "Total number of provider health checks");
         
         // Data operation metrics
         _dataQueryCounter = _meter.CreateCounter<long>(
@@ -83,6 +88,13 @@ public class TimeBaseMetrics : ITimeBaseMetrics
     public void UpdateActiveProviders(int delta)
     {
         _activeProvidersGauge.Add(delta);
+    }
+
+    public void RecordProviderHealth(string providerSlug, bool healthy)
+    {
+        _providerHealthCheckCounter.Add(1,
+            new KeyValuePair<string, object?>("provider", providerSlug),
+            new KeyValuePair<string, object?>("healthy", healthy));
     }
 
     // Data operation methods

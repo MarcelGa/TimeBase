@@ -14,6 +14,7 @@ public class ProviderRegistryTests : IDisposable
     private readonly TimeBaseDbContext _context;
     private readonly Mock<ILogger<ProviderRegistry>> _loggerMock;
     private readonly Mock<ITimeBaseMetrics> _metricsMock;
+    private readonly Mock<IProviderClient> _providerClientMock;
     private readonly ProviderRegistry _sut; // System Under Test
 
     public ProviderRegistryTests()
@@ -26,8 +27,9 @@ public class ProviderRegistryTests : IDisposable
         _context = new TimeBaseDbContext(options);
         _loggerMock = new Mock<ILogger<ProviderRegistry>>();
         _metricsMock = new Mock<ITimeBaseMetrics>();
+        _providerClientMock = new Mock<IProviderClient>();
 
-        _sut = new ProviderRegistry(_context, _loggerMock.Object, _metricsMock.Object);
+        _sut = new ProviderRegistry(_context, _loggerMock.Object, _metricsMock.Object, _providerClientMock.Object);
     }
 
     public void Dispose()
@@ -206,6 +208,7 @@ public class ProviderRegistryTests : IDisposable
             Enabled: enabled,
             RepositoryUrl: repositoryUrl ?? "https://github.com/test/provider",
             ImageUrl: null,
+            GrpcEndpoint: $"timebase-{slug}:50051",
             Config: null,
             Capabilities: null,
             CreatedAt: DateTime.UtcNow,
