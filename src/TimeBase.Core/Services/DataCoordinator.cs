@@ -60,36 +60,51 @@ public class DataCoordinator(
             // 3. No data in database - fetch from provider
             logger.LogInformation("No data in database for {Symbol}, fetching from provider", symbol);
 
-            // Get an enabled provider to fetch from
-            Provider? provider;
+            // Get providers to fetch from
+            List<Provider> providersToTry;
             if (providerId.HasValue)
             {
-                provider = await providerRegistry.GetProviderByIdAsync(providerId.Value);
+                var provider = await providerRegistry.GetProviderByIdAsync(providerId.Value);
                 if (provider == null || !provider.Enabled)
                 {
                     logger.LogWarning("Provider {ProviderId} not found or disabled", providerId);
                     return new List<TimeSeriesData>();
                 }
+                providersToTry = [provider];
             }
             else
             {
-                // Get first enabled provider
-                var providers = await providerRegistry.GetAllProvidersAsync(enabled: true);
-                provider = providers.FirstOrDefault();
-                if (provider == null)
+                // Get all enabled providers
+                providersToTry = await providerRegistry.GetAllProvidersAsync(enabled: true);
+                if (providersToTry.Count == 0)
                 {
                     logger.LogWarning("No enabled providers available");
                     return new List<TimeSeriesData>();
                 }
             }
 
-            // 4. Fetch from provider via gRPC
-            var providerData = await providerClient.GetHistoricalDataAsync(
-                provider, symbol, interval, start, end);
+            // 4. Try each provider until one returns data
+            List<TimeSeriesData> providerData = [];
+            foreach (var provider in providersToTry)
+            {
+                logger.LogDebug("Trying provider {Provider} for {Symbol}", provider.Slug, symbol);
+                
+                providerData = await providerClient.GetHistoricalDataAsync(
+                    provider, symbol, interval, start, end);
+
+                if (providerData.Count > 0)
+                {
+                    logger.LogInformation("Provider {Provider} returned {Count} data points for {Symbol}", 
+                        provider.Slug, providerData.Count, symbol);
+                    break;
+                }
+                
+                logger.LogDebug("Provider {Provider} returned no data for {Symbol}", provider.Slug, symbol);
+            }
 
             if (providerData.Count == 0)
             {
-                logger.LogInformation("Provider {Provider} returned no data for {Symbol}", provider.Slug, symbol);
+                logger.LogInformation("No providers returned data for {Symbol}", symbol);
                 return new List<TimeSeriesData>();
             }
 
@@ -100,8 +115,8 @@ public class DataCoordinator(
             metrics.RecordDataQuery(symbol, interval, providerData.Count, totalDuration, success: true);
 
             logger.LogInformation(
-                "Fetched and stored {Count} data points for {Symbol} from provider {Provider}",
-                providerData.Count, symbol, provider.Slug);
+                "Fetched and stored {Count} data points for {Symbol}",
+                providerData.Count, symbol);
 
             return providerData;
         }
