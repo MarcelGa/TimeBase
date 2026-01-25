@@ -84,7 +84,7 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     public async Task GetHistoricalData_ShouldReturnOk_WhenValidRequest()
     {
         // Act
-        var response = await _client.GetAsync("/api/data/historical?symbol=AAPL&interval=1d");
+        var response = await _client.GetAsync("/api/data/AAPL?interval=1d");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -116,7 +116,7 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     public async Task GetProvidersForSymbol_ShouldReturnOk_WhenValidSymbol()
     {
         // Act
-        var response = await _client.GetAsync("/api/data/providers?symbol=AAPL");
+        var response = await _client.GetAsync("/api/data/AAPL/providers");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

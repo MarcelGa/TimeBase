@@ -53,6 +53,9 @@ public class TimeBaseWebApplicationFactory : WebApplicationFactory<Program>, IAs
                 options.UseNpgsql(_dbFixture.ConnectionString);
             });
 
+            // Note: Health checks will automatically use the updated connection string
+            // since they depend on the DbContext and the configuration we override above
+
             // Build the service provider to run migrations
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();

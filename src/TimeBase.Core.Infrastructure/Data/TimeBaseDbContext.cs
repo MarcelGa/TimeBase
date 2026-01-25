@@ -54,7 +54,8 @@ public class TimeBaseDbContext(DbContextOptions<TimeBaseDbContext> options) : Db
         modelBuilder.Entity<TimeSeriesData>(entity =>
         {
             entity.ToTable("time_series_data");
-            entity.HasNoKey(); // Hypertable doesn't have a traditional primary key
+            // Composite primary key matching the database constraint: (time, symbol, interval, provider_id)
+            entity.HasKey(e => new { e.Time, e.Symbol, e.Interval, e.ProviderId });
             entity.Property(e => e.Time).HasColumnName("time");
             entity.Property(e => e.Symbol).HasColumnName("symbol").IsRequired().HasMaxLength(50);
             entity.Property(e => e.ProviderId).HasColumnName("provider_id");
