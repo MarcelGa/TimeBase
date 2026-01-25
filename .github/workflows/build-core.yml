@@ -96,9 +96,8 @@ jobs:
         continue-on-error: true
 
       - name: Build Docker image
-        working-directory: src
         run: |
-          docker build -f docker/core/Dockerfile -t timebase/core:test .
+          docker build -f src/docker/core/Dockerfile -t timebase/core:test .
 
       - name: Test Docker image
         run: |
