@@ -88,7 +88,17 @@ var app = builder.Build();
 // Add Serilog request logging (skip in test environments)
 if (app.Environment.EnvironmentName != "Testing")
 {
-    app.UseSerilogRequestLogging();
+    app.UseSerilogRequestLogging(options =>
+    {
+        // Exclude health check endpoints from request logging to reduce log noise
+        options.GetLevel = (httpContext, elapsed, ex) =>
+        {
+            if (httpContext.Request.Path.StartsWithSegments("/health"))
+                return Serilog.Events.LogEventLevel.Verbose;
+            
+            return Serilog.Events.LogEventLevel.Information;
+        };
+    });
 }
 
 // Add rate limiting
