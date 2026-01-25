@@ -162,8 +162,7 @@ public class ProviderRegistryDatabaseTests : IClassFixture<TimeBaseWebApplicatio
             Low: 149.0,
             Close: 154.0,
             Volume: 1000000.0,
-            Metadata: "{}",
-            Payload: "{}"
+            Metadata: "{}"
         );
 
         // Act
