@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TimeBase.Core.Models;
 using TimeBase.Core.Services;
+using TimeBase.Core.Infrastructure;
 
 public static class EndpointsExtensions
 {
@@ -39,21 +40,8 @@ public static class EndpointsExtensions
         // Install a new provider
         endpointRouteBuilder.MapPost("/api/providers", async (
             InstallProviderRequest request,
-            IValidator<InstallProviderRequest> validator,
             ProviderRegistry registry) => 
         {
-            var validationResult = await validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-            {
-                var errors = validationResult.Errors
-                    .GroupBy(e => e.PropertyName)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(e => e.ErrorMessage).ToArray()
-                    );
-                return Results.ValidationProblem(errors);
-            }
-            
             try
             {
                 var provider = await registry.InstallProviderAsync(request.Repository);
@@ -72,6 +60,7 @@ public static class EndpointsExtensions
                 );
             }
         })
+        .AddEndpointFilter<ValidationFilter<InstallProviderRequest>>()
         .WithName("InstallProvider")
         .WithTags("Providers")
         .Produces<InstallProviderResponse>(201)
@@ -96,21 +85,8 @@ public static class EndpointsExtensions
         endpointRouteBuilder.MapPatch("/api/providers/{id:guid}/enabled", async (
             Guid id,
             SetProviderEnabledRequest request,
-            IValidator<SetProviderEnabledRequest> validator,
             ProviderRegistry registry) =>
         {
-            var validationResult = await validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-            {
-                var errors = validationResult.Errors
-                    .GroupBy(e => e.PropertyName)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(e => e.ErrorMessage).ToArray()
-                    );
-                return Results.ValidationProblem(errors);
-            }
-            
             var provider = await registry.SetProviderEnabledAsync(id, request.Enabled);
             if (provider == null)
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
@@ -120,6 +96,7 @@ public static class EndpointsExtensions
                 provider
             ));
         })
+        .AddEndpointFilter<ValidationFilter<SetProviderEnabledRequest>>()
         .WithName("SetProviderEnabled")
         .WithTags("Providers")
         .Produces<SetProviderEnabledResponse>(200)
@@ -200,6 +177,8 @@ public static class EndpointsExtensions
             interval ??= "1d";
             
             var request = new GetHistoricalDataRequest(symbol, interval, start, end, providerId);
+            
+            // Manual validation required for GET endpoints with constructed request objects
             var validationResult = await validator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
