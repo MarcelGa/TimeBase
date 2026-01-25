@@ -18,8 +18,6 @@ public class TimeBaseWebApplicationFactory : WebApplicationFactory<Program>, IAs
         _dbFixture = new PostgreSqlContainerFixture();
     }
 
-    public string ConnectionString => _dbFixture.ConnectionString;
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Set testing environment to skip Serilog configuration

@@ -6,12 +6,10 @@ namespace TimeBase.Core.Tests.Integration.Endpoints;
 
 public class HealthCheckEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>
 {
-    private readonly TimeBaseWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
     public HealthCheckEndpointsTests(TimeBaseWebApplicationFactory factory)
     {
-        _factory = factory;
         _client = factory.CreateClient();
     }
 
