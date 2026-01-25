@@ -154,8 +154,13 @@ public static class EndpointsExtensions
             }
 
             // Default to last 30 days if no dates provided
-            var startDate = request.Start ?? DateTime.UtcNow.AddDays(-30);
-            var endDate = request.End ?? DateTime.UtcNow;
+            // Ensure DateTimes are UTC (PostgreSQL requires it)
+            var startDate = request.Start.HasValue 
+                ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow.AddDays(-30);
+            var endDate = request.End.HasValue
+                ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow;
 
             try
             {

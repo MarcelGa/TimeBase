@@ -12,10 +12,10 @@ CREATE TABLE providers (
     name VARCHAR(255) NOT NULL,
     version VARCHAR(50) NOT NULL,
     repository_url TEXT,
-    image_url TEXT NOT NULL,
+    image_url TEXT,  -- Optional Docker image URL
     enabled BOOLEAN DEFAULT true,
     config JSONB,  -- Provider-specific configuration
-    capabilities JSONB NOT NULL,  -- Provider capabilities
+    capabilities JSONB,  -- Provider capabilities (nullable in MVP)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -126,13 +126,13 @@ CREATE INDEX IF NOT EXISTS idx_daily_ohlcv_provider_day ON daily_ohlcv (provider
 
 -- Insert some sample data for testing
 -- This will be replaced by real data from providers
-INSERT INTO providers (slug, name, version, image_url, capabilities) VALUES
-('minimal-provider', 'Minimal Provider', '1.0.0', 'timebase/minimal-provider:latest', '{
-  "supports_historical": true,
-  "supports_realtime": false,
-  "data_types": ["stocks"],
-  "intervals": ["1d"]
-}'::jsonb);
+-- INSERT INTO providers (slug, name, version, image_url, capabilities) VALUES
+-- ('minimal-provider', 'Minimal Provider', '1.0.0', 'timebase/minimal-provider:latest', '{
+--   "supports_historical": true,
+--   "supports_realtime": false,
+--   "data_types": ["stocks"],
+--   "intervals": ["1d"]
+-- }'::jsonb);
 
 INSERT INTO symbols (symbol, name, type, exchange) VALUES
 ('AAPL', 'Apple Inc.', 'stock', 'NASDAQ'),

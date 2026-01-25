@@ -1,0 +1,115 @@
+﻿syntax = "proto3";
+
+package timebase.provider;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// DataProvider service defines the interface for time series data providers
+service DataProvider {
+  // Get provider capabilities and supported features
+  rpc GetCapabilities(google.protobuf.Empty) returns (ProviderCapabilities);
+
+  // Fetch historical time series data
+  // Supervisor calls this to request historical OHLCV data
+  rpc GetHistoricalData(HistoricalDataRequest) returns (stream TimeSeriesData);
+
+  // Stream real-time time series data (bidirectional)
+  // Provider can push data proactively, supervisor can send control messages
+  rpc StreamRealTimeData(stream StreamControl) returns (stream TimeSeriesData);
+
+  // Health check for provider status monitoring
+  rpc HealthCheck(google.protobuf.Empty) returns (HealthStatus);
+}
+
+// Core time series data structure - OHLCV with optional metadata
+message TimeSeriesData {
+  string symbol = 1;                       // Financial symbol (e.g., "AAPL", "BTC-USD")
+  google.protobuf.Timestamp timestamp = 2; // Data timestamp (UTC)
+
+  // OHLCV data (core financial data)
+  double open = 3;                         // Opening price
+  double high = 4;                         // High price during interval
+  double low = 5;                          // Low price during interval
+  double close = 6;                        // Closing price
+  double volume = 7;                       // Trading volume
+
+  string interval = 8;                     // Time interval (e.g., "1d", "1h")
+  string provider = 9;                     // Provider identifier (e.g., "yahoo-finance")
+
+  // Optional metadata for provider-specific extensions
+  // Examples:
+  // "dividend": "0.25" - Dividend payment
+  // "split": "2:1" - Stock split ratio
+  // "earnings": "true" - Earnings announcement
+  map<string, string> metadata = 10;
+}
+
+// Provider capabilities define what the provider supports
+message ProviderCapabilities {
+  string name = 1;           // Human-readable name (e.g., "Yahoo Finance Provider")
+  string version = 2;        // Semantic version (e.g., "1.0.0")
+  string slug = 3;           // Unique identifier (e.g., "yahoo-finance")
+
+  bool supports_historical = 4;    // Supports historical data requests
+  bool supports_realtime = 5;      // Supports real-time streaming
+  bool supports_backfill = 6;      // Can fetch historical data in bulk
+
+  repeated string data_types = 7;      // Supported data types: ["stocks", "crypto", "forex"]
+  repeated string intervals = 8;       // Supported intervals: ["1m", "5m", "1h", "1d"]
+
+  RateLimits rate_limits = 9;          // Rate limiting information
+
+  // Optional: Maximum lookback period in days (e.g., 3650 for 10 years)
+  optional int32 max_lookback_days = 10;
+}
+
+// Rate limiting information for the provider
+message RateLimits {
+  int32 requests_per_minute = 1;     // Max requests per minute
+  int32 requests_per_day = 2;        // Max requests per day
+}
+
+// Request for historical time series data
+message HistoricalDataRequest {
+  string symbol = 1;                       // Financial symbol (e.g., "AAPL", "BTC-USD")
+  string interval = 2;                     // Time interval (e.g., "1d", "1h")
+  google.protobuf.Timestamp start_time = 3; // Start timestamp (UTC)
+  google.protobuf.Timestamp end_time = 4;   // End timestamp (UTC)
+
+  // Optional: Limit number of data points returned
+  optional int32 limit = 5;
+}
+
+// Control messages for real-time streaming
+message StreamControl {
+  enum Action {
+    SUBSCRIBE = 0;      // Start streaming for symbol/interval
+    UNSUBSCRIBE = 1;    // Stop streaming for symbol/interval
+    PAUSE = 2;          // Temporarily pause streaming
+    RESUME = 3;         // Resume paused streaming
+  }
+
+  Action action = 1;        // Control action
+  string symbol = 2;        // Symbol to control
+  string interval = 3;      // Interval to control
+
+  // Optional: Additional parameters
+  map<string, string> options = 4;
+}
+
+// Health status for provider monitoring
+message HealthStatus {
+  enum Status {
+    HEALTHY = 0;        // Provider is fully operational
+    DEGRADED = 1;       // Provider has issues but still functional
+    UNHEALTHY = 2;      // Provider is not operational
+  }
+
+  Status status = 1;                    // Current health status
+  string message = 2;                   // Human-readable status message
+  google.protobuf.Timestamp timestamp = 3; // Status timestamp
+
+  // Optional: Additional health metrics
+  map<string, string> metrics = 4;
+}

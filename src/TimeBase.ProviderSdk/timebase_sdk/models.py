@@ -1,8 +1,8 @@
 """Data models for TimeBase providers."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 
 @dataclass
@@ -198,3 +198,42 @@ class ErrorInfo:
             result["retry_suggestion"] = self.retry_suggestion
 
         return result
+
+
+@dataclass
+class ProviderConfig:
+    """Provider configuration loaded from config.yaml."""
+    name: str
+    version: str
+    slug: str
+    description: str
+    image: str
+    arch: List[str]
+    capabilities: Dict[str, bool]
+    data_types: List[str]
+    intervals: List[str]
+    rate_limits: Dict[str, int]
+    options: Dict[str, Any] = field(default_factory=dict)
+    host_network: bool = False
+    author: Optional[str] = None
+    settings: Optional[Dict[str, Any]] = None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ProviderConfig':
+        """Create ProviderConfig from dictionary."""
+        return cls(
+            name=data.get('name', ''),
+            version=data.get('version', ''),
+            slug=data.get('slug', ''),
+            description=data.get('description', ''),
+            image=data.get('image', ''),
+            arch=data.get('arch', ['amd64']),
+            capabilities=data.get('capabilities', {}),
+            data_types=data.get('data_types', []),
+            intervals=data.get('intervals', []),
+            rate_limits=data.get('rate_limits', {}),
+            options=data.get('options', {}),
+            host_network=data.get('host_network', False),
+            author=data.get('author'),
+            settings=data.get('settings')
+        )

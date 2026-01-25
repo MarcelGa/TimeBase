@@ -52,10 +52,10 @@ Issues = "https://github.com/MarcelGa/TimeBase/issues"
 Documentation = "https://timebase.dev/docs"
 
 [tool.setuptools]
-packages = ["timebase_sdk"]
+packages = ["timebase_sdk", "timebase_sdk.protos", "timebase_sdk.generated"]
 
 [tool.setuptools.package-data]
-timebase_sdk = ["py.typed"]
+timebase_sdk = ["py.typed", "protos/*.proto"]
 
 [tool.black]
 line-length = 100
