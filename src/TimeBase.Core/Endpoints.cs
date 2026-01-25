@@ -16,25 +16,25 @@ public static class EndpointsExtensions
         endpointRouteBuilder.MapGet("/api/providers", async (ProviderRegistry registry) => 
         {
             var providers = await registry.GetAllProvidersAsync();
-            return Results.Ok(new { providers });
+            return Results.Ok(new GetProvidersResponse(providers));
         })
         .WithName("GetProviders")
         .WithTags("Providers")
-        .Produces<object>(200);
+        .Produces<GetProvidersResponse>(200);
 
         // Get provider by ID
         endpointRouteBuilder.MapGet("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
         {
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
-                return Results.NotFound(new { error = $"Provider {id} not found" });
+                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
             
-            return Results.Ok(new { provider });
+            return Results.Ok(new GetProviderResponse(provider));
         })
         .WithName("GetProvider")
         .WithTags("Providers")
-        .Produces<object>(200)
-        .Produces(404);
+        .Produces<GetProviderResponse>(200)
+        .Produces<ErrorResponse>(404);
 
         // Install a new provider
         endpointRouteBuilder.MapPost("/api/providers", async (
@@ -57,11 +57,11 @@ public static class EndpointsExtensions
             try
             {
                 var provider = await registry.InstallProviderAsync(request.Repository);
-                return Results.Created($"/api/providers/{provider.Id}", new 
-                { 
-                    message = "Provider installed successfully",
-                    provider
-                });
+                return Results.Created($"/api/providers/{provider.Id}", 
+                    new InstallProviderResponse(
+                        "Provider installed successfully",
+                        provider
+                    ));
             }
             catch (Exception ex)
             {
@@ -74,7 +74,7 @@ public static class EndpointsExtensions
         })
         .WithName("InstallProvider")
         .WithTags("Providers")
-        .Produces<object>(201)
+        .Produces<InstallProviderResponse>(201)
         .ProducesValidationProblem()
         .Produces(500);
 
@@ -83,14 +83,14 @@ public static class EndpointsExtensions
         {
             var success = await registry.UninstallProviderAsync(id);
             if (!success)
-                return Results.NotFound(new { error = $"Provider {id} not found" });
+                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
             
-            return Results.Ok(new { message = "Provider uninstalled successfully" });
+            return Results.Ok(new UninstallProviderResponse("Provider uninstalled successfully"));
         })
         .WithName("UninstallProvider")
         .WithTags("Providers")
-        .Produces<object>(200)
-        .Produces(404);
+        .Produces<UninstallProviderResponse>(200)
+        .Produces<ErrorResponse>(404);
 
         // Enable/disable a provider
         endpointRouteBuilder.MapPatch("/api/providers/{id:guid}/enabled", async (
@@ -113,19 +113,18 @@ public static class EndpointsExtensions
             
             var provider = await registry.SetProviderEnabledAsync(id, request.Enabled);
             if (provider == null)
-                return Results.NotFound(new { error = $"Provider {id} not found" });
+                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
             
-            return Results.Ok(new 
-            { 
-                message = $"Provider {(provider.Enabled ? "enabled" : "disabled")} successfully",
+            return Results.Ok(new SetProviderEnabledResponse(
+                $"Provider {(provider.Enabled ? "enabled" : "disabled")} successfully",
                 provider
-            });
+            ));
         })
         .WithName("SetProviderEnabled")
         .WithTags("Providers")
-        .Produces<object>(200)
+        .Produces<SetProviderEnabledResponse>(200)
         .ProducesValidationProblem()
-        .Produces(404);
+        .Produces<ErrorResponse>(404);
 
         // Refresh provider capabilities
         endpointRouteBuilder.MapPost("/api/providers/{id:guid}/capabilities", async (
@@ -134,20 +133,19 @@ public static class EndpointsExtensions
         {
             var provider = await registry.UpdateCapabilitiesAsync(id);
             if (provider == null)
-                return Results.NotFound(new { error = $"Provider {id} not found" });
+                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
             
             var capabilities = registry.GetCachedCapabilities(provider);
-            return Results.Ok(new 
-            { 
-                message = "Provider capabilities updated successfully",
+            return Results.Ok(new RefreshProviderCapabilitiesResponse(
+                "Provider capabilities updated successfully",
                 provider,
                 capabilities
-            });
+            ));
         })
         .WithName("RefreshProviderCapabilities")
         .WithTags("Providers")
-        .Produces<object>(200)
-        .Produces(404);
+        .Produces<RefreshProviderCapabilitiesResponse>(200)
+        .Produces<ErrorResponse>(404);
 
         // Refresh all provider capabilities
         endpointRouteBuilder.MapPost("/api/providers/capabilities/refresh", async (ProviderRegistry registry) =>
@@ -155,16 +153,15 @@ public static class EndpointsExtensions
             await registry.UpdateAllCapabilitiesAsync();
             var providers = await registry.GetAllProvidersAsync(enabled: true);
             
-            return Results.Ok(new 
-            { 
-                message = "All provider capabilities updated successfully",
-                count = providers.Count,
+            return Results.Ok(new RefreshAllCapabilitiesResponse(
+                "All provider capabilities updated successfully",
+                providers.Count,
                 providers
-            });
+            ));
         })
         .WithName("RefreshAllCapabilities")
         .WithTags("Providers")
-        .Produces<object>(200);
+        .Produces<RefreshAllCapabilitiesResponse>(200);
 
         // Check provider health
         endpointRouteBuilder.MapGet("/api/providers/{id:guid}/health", async (
@@ -174,21 +171,20 @@ public static class EndpointsExtensions
         {
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
-                return Results.NotFound(new { error = $"Provider {id} not found" });
+                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
 
             var isHealthy = await providerClient.IsHealthyAsync(provider);
             
-            return Results.Ok(new 
-            { 
-                provider = new { provider.Id, provider.Slug, provider.Name },
-                healthy = isHealthy,
-                checkedAt = DateTime.UtcNow
-            });
+            return Results.Ok(new CheckProviderHealthResponse(
+                new ProviderHealthInfo(provider.Id, provider.Slug, provider.Name),
+                isHealthy,
+                DateTime.UtcNow
+            ));
         })
         .WithName("CheckProviderHealth")
         .WithTags("Providers")
-        .Produces<object>(200)
-        .Produces(404);
+        .Produces<CheckProviderHealthResponse>(200)
+        .Produces<ErrorResponse>(404);
 
         // Get historical data
         endpointRouteBuilder.MapGet("/api/data/{symbol}", async (
@@ -228,15 +224,14 @@ public static class EndpointsExtensions
             try
             {
                 var data = await coordinator.GetHistoricalAsync(symbol, interval, startDate, endDate, providerId);
-                return Results.Ok(new 
-                { 
+                return Results.Ok(new GetHistoricalDataResponse(
                     symbol,
                     interval,
-                    start = startDate,
-                    end = endDate,
-                    count = data.Count,
+                    startDate,
+                    endDate,
+                    data.Count,
                     data
-                });
+                ));
             }
             catch (Exception ex)
             {
@@ -249,7 +244,7 @@ public static class EndpointsExtensions
         })
         .WithName("GetHistoricalData")
         .WithTags("Data")
-        .Produces<object>(200)
+        .Produces<GetHistoricalDataResponse>(200)
         .ProducesValidationProblem()
         .Produces(500);
 
@@ -258,29 +253,28 @@ public static class EndpointsExtensions
         {
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
-                return Results.NotFound(new { error = $"No data found for symbol {symbol}" });
+                return Results.NotFound(new ErrorResponse($"No data found for symbol {symbol}"));
             
-            return Results.Ok(new { summary });
+            return Results.Ok(new GetDataSummaryResponse(summary));
         })
         .WithName("GetDataSummary")
         .WithTags("Data")
-        .Produces<object>(200)
-        .Produces(404);
+        .Produces<GetDataSummaryResponse>(200)
+        .Produces<ErrorResponse>(404);
 
         // Get available providers for a symbol
         endpointRouteBuilder.MapGet("/api/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
         {
             var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
-            return Results.Ok(new 
-            { 
+            return Results.Ok(new GetProvidersForSymbolResponse(
                 symbol,
-                count = providers.Count,
+                providers.Count,
                 providers
-            });
+            ));
         })
         .WithName("GetProvidersForSymbol")
         .WithTags("Data")
-        .Produces<object>(200);
+        .Produces<GetProvidersForSymbolResponse>(200);
 
         return endpointRouteBuilder;
     }
