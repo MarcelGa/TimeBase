@@ -1,9 +1,7 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using TimeBase.Core.Models;
-using Xunit;
 
-namespace TimeBase.Core.Tests.Models;
+namespace TimeBase.Core.Tests.Unit.Models;
 
 public class InstallProviderRequestValidatorTests
 {

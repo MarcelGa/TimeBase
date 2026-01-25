@@ -5,9 +5,8 @@ using Moq;
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
 using TimeBase.Core.Services;
-using Xunit;
 
-namespace TimeBase.Core.Tests.Services;
+namespace TimeBase.Core.Tests.Unit.Services;
 
 public class ProviderRegistryTests : IDisposable
 {
