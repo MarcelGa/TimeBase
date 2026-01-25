@@ -65,7 +65,6 @@ public class TimeBaseDbContext(DbContextOptions<TimeBaseDbContext> options) : Db
             entity.Property(e => e.Close).HasColumnName("close");
             entity.Property(e => e.Volume).HasColumnName("volume");
             entity.Property(e => e.Metadata).HasColumnName("metadata").HasColumnType("jsonb");
-            entity.Property(e => e.Payload).HasColumnName("payload").HasColumnType("jsonb");
         });
     }
 }
