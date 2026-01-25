@@ -10,20 +10,17 @@ using AspNetCoreRateLimit;
 using TimeBase.Core.Health;
 using TimeBase.Core.Infrastructure;
 
-// Configure Serilog early
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-Log.Information("Starting TimeBase.Core");
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Replace default logging with Serilog
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext());
+// Configure Serilog early (skip in test environments to avoid frozen logger issues)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    // Replace default logging with Serilog
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+}
 
 // Add OpenTelemetry
 var otelConfig = builder.Configuration.GetSection("OpenTelemetry");
@@ -88,8 +85,11 @@ builder.Services.AddInfrastructure(builder.Configuration, healthChecks);
 
 var app = builder.Build();
 
-// Add Serilog request logging
-app.UseSerilogRequestLogging();
+// Add Serilog request logging (skip in test environments)
+if (app.Environment.EnvironmentName != "Testing")
+{
+    app.UseSerilogRequestLogging();
+}
 
 // Add rate limiting
 app.UseIpRateLimiting();

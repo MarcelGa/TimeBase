@@ -10,6 +10,5 @@ public record TimeSeriesData(
     double Low,
     double Close,
     double Volume,
-    string? Metadata,
-    string? Payload
+    string? Metadata
 );

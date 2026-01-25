@@ -22,6 +22,9 @@ public class TimeBaseWebApplicationFactory : WebApplicationFactory<Program>, IAs
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Set testing environment to skip Serilog configuration
+        builder.UseEnvironment("Testing");
+        
         builder.ConfigureAppConfiguration((context, config) =>
         {
             // Override configuration for testing
@@ -30,6 +33,10 @@ public class TimeBaseWebApplicationFactory : WebApplicationFactory<Program>, IAs
                 ["ConnectionStrings:TimeBaseDb"] = _dbFixture.ConnectionString,
                 ["OpenTelemetry:Tracing:Enabled"] = "false",
                 ["OpenTelemetry:Metrics:Enabled"] = "false",
+                ["OpenTelemetry:Tracing:ConsoleExporter"] = "false",
+                ["OpenTelemetry:Tracing:OtlpExporter"] = "false",
+                ["OpenTelemetry:Metrics:ConsoleExporter"] = "false",
+                ["OpenTelemetry:Metrics:OtlpExporter"] = "false",
                 ["IpRateLimiting:GeneralRules:0:Limit"] = "10000", // Disable rate limiting for tests
             });
         });
