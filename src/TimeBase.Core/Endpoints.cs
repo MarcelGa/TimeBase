@@ -165,31 +165,11 @@ public static class EndpointsExtensions
 
         // Get historical data
         endpointRouteBuilder.MapGet("/api/data/{symbol}", async (
-            string symbol,
-            string? interval,
-            DateTime? start,
-            DateTime? end,
-            Guid? providerId,
-            IValidator<GetHistoricalDataRequest> validator,
+            [AsParameters] GetHistoricalDataRequest request,
             DataCoordinator coordinator) => 
         {
             // Default interval if not provided
-            interval ??= "1d";
-            
-            var request = new GetHistoricalDataRequest(symbol, interval, start, end, providerId);
-            
-            // Manual validation required for GET endpoints with constructed request objects
-            var validationResult = await validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-            {
-                var errors = validationResult.Errors
-                    .GroupBy(e => e.PropertyName)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(e => e.ErrorMessage).ToArray()
-                    );
-                return Results.ValidationProblem(errors);
-            }
+            var interval = request.Interval ?? "1d";
 
             // Default to last 30 days if no dates provided
             // Ensure DateTimes are UTC (PostgreSQL requires it)
@@ -202,9 +182,9 @@ public static class EndpointsExtensions
 
             try
             {
-                var data = await coordinator.GetHistoricalAsync(symbol, interval, startDate, endDate, providerId);
+                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.ProviderId);
                 return Results.Ok(new GetHistoricalDataResponse(
-                    symbol,
+                    request.Symbol,
                     interval,
                     startDate,
                     endDate,
@@ -221,6 +201,7 @@ public static class EndpointsExtensions
                 );
             }
         })
+        .AddEndpointFilter<ValidationFilter<GetHistoricalDataRequest>>()
         .WithName("GetHistoricalData")
         .WithTags("Data")
         .Produces<GetHistoricalDataResponse>(200)

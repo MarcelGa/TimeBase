@@ -1,13 +1,18 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace TimeBase.Core.Models;
 
+/// <summary>
+/// Request parameters for getting historical data.
+/// Uses [AsParameters] to bind from both route and query string.
+/// </summary>
 public record GetHistoricalDataRequest(
-    string Symbol,
-    string Interval,
-    DateTime? Start,
-    DateTime? End,
-    Guid? ProviderId
+    [FromRoute] string Symbol,
+    [FromQuery] string? Interval,
+    [FromQuery] DateTime? Start,
+    [FromQuery] DateTime? End,
+    [FromQuery] Guid? ProviderId
 );
 
 public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistoricalDataRequest>
@@ -28,8 +33,8 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
             .MaximumLength(20).WithMessage("Symbol must be 20 characters or less");
 
         RuleFor(x => x.Interval)
-            .NotEmpty().WithMessage("Interval is required")
-            .Must(BeValidInterval).WithMessage($"Interval must be one of: {string.Join(", ", ValidIntervals)}");
+            .Must(BeValidInterval).WithMessage($"Interval must be one of: {string.Join(", ", ValidIntervals)}")
+            .When(x => !string.IsNullOrEmpty(x.Interval));
 
         RuleFor(x => x.Start)
             .Must(date => !date.HasValue || date.Value <= DateTime.UtcNow.AddDays(1))
@@ -47,8 +52,9 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
             .When(x => x.End.HasValue);
     }
 
-    private bool BeValidInterval(string interval)
+    private bool BeValidInterval(string? interval)
     {
+        if (string.IsNullOrEmpty(interval)) return true;
         return ValidIntervals.Contains(interval, StringComparer.OrdinalIgnoreCase);
     }
 
