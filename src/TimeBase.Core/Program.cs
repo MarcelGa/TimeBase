@@ -1,5 +1,6 @@
 using TimeBase.Core.Services;
 using TimeBase.Core;
+using TimeBase.Core.Hubs;
 using Serilog;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -21,6 +22,39 @@ if (builder.Environment.EnvironmentName != "Testing")
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 }
+
+// Add CORS for development
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Development", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // Required for SignalR
+    });
+    
+    options.AddPolicy("Production", policy =>
+    {
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+            ?? Array.Empty<string>();
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
+// Add SignalR
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+});
+
+// Add MarketBroadcaster service
+builder.Services.AddSingleton<IMarketBroadcaster, MarketBroadcaster>();
 
 // Add OpenTelemetry
 var otelConfig = builder.Configuration.GetSection("OpenTelemetry");
@@ -91,6 +125,16 @@ if (app.Environment.EnvironmentName != "Testing")
     app.UseSerilogRequestLogging();
 }
 
+// Enable CORS
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("Development");
+}
+else
+{
+    app.UseCors("Production");
+}
+
 // Add rate limiting
 app.UseIpRateLimiting();
 
@@ -103,6 +147,8 @@ app
     .AddTimeBaseEndpoints()
     .MapPrometheusScrapingEndpoint();
 
+// Map SignalR hub
+app.MapHub<MarketHub>("/hubs/market");
 
 if (app.Environment.IsDevelopment())
 {
