@@ -1,7 +1,7 @@
 name: "Yahoo Finance Provider"
 version: "1.0.0"
 slug: "yahoo-finance"
-description: "Production-ready provider for fetching real financial data from Yahoo Finance. Supports stocks, ETFs, indices, and cryptocurrencies."
+description: "Production-ready provider for fetching real financial data from Yahoo Finance. Supports stocks, ETFs, indices, and cryptocurrencies. Includes polling-based real-time streaming."
 
 image: "ghcr.io/marcelga/timebase-yahoo-finance:latest"
 arch:
@@ -10,7 +10,7 @@ arch:
 
 capabilities:
   historical_data: true
-  real_time_streaming: false
+  real_time_streaming: true  # Enabled: polling-based real-time streaming
   backfill: true
 
 data_types:
