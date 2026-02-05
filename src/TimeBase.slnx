@@ -6,7 +6,7 @@
     <File Path=".editorconfig" />
   </Folder>
   <Project Path="TimeBase.Core\TimeBase.Core.csproj" />
-  <Project Path="TimeBase.Contracts\TimeBase.Contracts.csproj" />
+  <Project Path="TimeBase.Plugins.Contracts\TimeBase.Plugins.Contracts.csproj" />
   <Project Path="TimeBase.Core.Infrastructure\TimeBase.Core.Infrastructure.csproj" />
   <Project Path="TimeBase.Core.Tests.Integration\TimeBase.Core.Tests.Integration.csproj" />
   <Project Path="TimeBase.Core.Tests.Unit\TimeBase.Core.Tests.Unit.csproj" />

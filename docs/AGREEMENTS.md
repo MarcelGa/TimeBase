@@ -416,7 +416,7 @@ src/
 │   ├── Migrations/                         # EF Core migrations
 │   └── DependencyExtensions.cs             # Infrastructure setup and configuration
 │
-└── TimeBase.Contracts/                     # gRPC Protocol Definitions
+└── TimeBase.Plugins.Contracts/              # gRPC Protocol Definitions (referenced only by providers)
     └── protos/                             # .proto files
 ```
 
@@ -424,7 +424,7 @@ src/
 
 1. **TimeBase.Core** (Application/API Layer)
    - Contains: Controllers, endpoints, services, DTOs, health checks
-   - References: TimeBase.Core.Infrastructure, TimeBase.Contracts
+   - References: TimeBase.Core.Infrastructure, TimeBase.Plugins.Contracts
    - Responsibilities: HTTP handling, business logic orchestration
    - No direct database code
    - Uses fluent API pattern for endpoint registration
@@ -436,11 +436,12 @@ src/
    - Exposes entities and DbContext to Core
    - Provides extension methods for service registration
 
-3. **TimeBase.Contracts** (Shared Protocols)
+3. **TimeBase.Plugins.Contracts** (Shared Protocols)
    - Contains: gRPC protocol definitions (.proto files)
    - References: None
-   - Responsibilities: API contracts between Core and Providers
+   - Responsibilities: API contracts between Core and data providers
    - Language-agnostic definitions
+   - Referenced only by provider implementations
 
 **Migration History**:
 - **2026-01-23**: Extracted data layer into `TimeBase.Core.Infrastructure` project
@@ -465,7 +466,7 @@ src/
 - Business services: `TimeBase.Core.Services`
 - Health checks: `TimeBase.Core.Health`
 - API endpoints: `TimeBase.Core`
-- gRPC contracts: `TimeBase.Contracts`
+- gRPC contracts: `TimeBase.Plugins.Contracts`
 
 **Code Organization Patterns** (Established 2026-01-23):
 - **Extension Methods**: Use extension methods for feature registration

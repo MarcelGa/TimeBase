@@ -207,8 +207,9 @@ public class ExampleService(
 - Database migrations
 - Infrastructure configuration
 
-**TimeBase.Contracts** (Shared Protocols)
+**TimeBase.Plugins.Contracts** (Shared Protocols)
 - gRPC protocol definitions (.proto files)
+- Referenced only by provider implementations
 
 ### Code Organization Patterns
 - **Extension Methods**: Use for feature registration (`AddHealthChecks()`, `AddInfrastructure()`, `UseInfrastructure()`)
@@ -221,7 +222,7 @@ public class ExampleService(
 - Business services: `TimeBase.Core.Services`
 - Health checks: `TimeBase.Core.Health`
 - API endpoints: `TimeBase.Core`
-- gRPC contracts: `TimeBase.Contracts`
+- gRPC contracts: `TimeBase.Plugins.Contracts`
 
 ## Testing Standards
 
