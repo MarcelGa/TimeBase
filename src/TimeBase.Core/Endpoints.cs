@@ -11,10 +11,20 @@ using TimeBase.Core.Infrastructure;
 
 public static class EndpointsExtensions
 {
-    public static IEndpointRouteBuilder AddTimeBaseEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
+    /// <summary>
+    /// Adds TimeBase API endpoints. Can optionally use a route group for applying global filters.
+    /// </summary>
+    /// <param name="endpointRouteBuilder">The main endpoint route builder (app)</param>
+    /// <param name="apiGroup">Optional API route group with global validation filter applied</param>
+    public static IEndpointRouteBuilder AddTimeBaseEndpoints(
+        this IEndpointRouteBuilder endpointRouteBuilder,
+        IEndpointRouteBuilder? apiGroup = null)
     {
+        // Use the API group if provided, otherwise use the main route builder
+        var builder = apiGroup ?? endpointRouteBuilder;
+
         // Get all providers
-        endpointRouteBuilder.MapGet("/api/providers", async (ProviderRegistry registry) => 
+        builder.MapGet("/providers", async (ProviderRegistry registry) => 
         {
             var providers = await registry.GetAllProvidersAsync();
             return Results.Ok(new GetProvidersResponse(providers));
@@ -24,7 +34,7 @@ public static class EndpointsExtensions
         .Produces<GetProvidersResponse>(200);
 
         // Get provider by ID
-        endpointRouteBuilder.MapGet("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
+        builder.MapGet("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
         {
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
@@ -38,7 +48,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Install a new provider
-        endpointRouteBuilder.MapPost("/api/providers", async (
+        builder.MapPost("/providers", async (
             InstallProviderRequest request,
             ProviderRegistry registry) => 
         {
@@ -60,7 +70,6 @@ public static class EndpointsExtensions
                 );
             }
         })
-        .AddEndpointFilter<ValidationFilter<InstallProviderRequest>>()
         .WithName("InstallProvider")
         .WithTags("Providers")
         .Produces<InstallProviderResponse>(201)
@@ -68,7 +77,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Uninstall a provider
-        endpointRouteBuilder.MapDelete("/api/providers/{id:guid}", async (Guid id, ProviderRegistry registry) => 
+        builder.MapDelete("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) => 
         {
             var success = await registry.UninstallProviderAsync(id);
             if (!success)
@@ -82,7 +91,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Enable/disable a provider
-        endpointRouteBuilder.MapPatch("/api/providers/{id:guid}/enabled", async (
+        builder.MapPatch("/providers/{id:guid}/enabled", async (
             Guid id,
             SetProviderEnabledRequest request,
             ProviderRegistry registry) =>
@@ -96,7 +105,6 @@ public static class EndpointsExtensions
                 provider
             ));
         })
-        .AddEndpointFilter<ValidationFilter<SetProviderEnabledRequest>>()
         .WithName("SetProviderEnabled")
         .WithTags("Providers")
         .Produces<SetProviderEnabledResponse>(200)
@@ -104,7 +112,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Refresh provider capabilities
-        endpointRouteBuilder.MapPost("/api/providers/{id:guid}/capabilities", async (
+        builder.MapPost("/providers/{id:guid}/capabilities", async (
             Guid id,
             ProviderRegistry registry) =>
         {
@@ -125,7 +133,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Refresh all provider capabilities
-        endpointRouteBuilder.MapPost("/api/providers/capabilities/refresh", async (ProviderRegistry registry) =>
+        builder.MapPost("/providers/capabilities/refresh", async (ProviderRegistry registry) =>
         {
             await registry.UpdateAllCapabilitiesAsync();
             var providers = await registry.GetAllProvidersAsync(enabled: true);
@@ -141,7 +149,7 @@ public static class EndpointsExtensions
         .Produces<RefreshAllCapabilitiesResponse>(200);
 
         // Check provider health
-        endpointRouteBuilder.MapGet("/api/providers/{id:guid}/health", async (
+        builder.MapGet("/providers/{id:guid}/health", async (
             Guid id,
             ProviderRegistry registry,
             IProviderClient providerClient) =>
@@ -164,7 +172,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Get historical data
-        endpointRouteBuilder.MapGet("/api/data/{symbol}", async (
+        builder.MapGet("/data/{symbol}", async (
             [AsParameters] GetHistoricalDataRequest request,
             DataCoordinator coordinator) => 
         {
@@ -201,7 +209,6 @@ public static class EndpointsExtensions
                 );
             }
         })
-        .AddEndpointFilter<ValidationFilter<GetHistoricalDataRequest>>()
         .WithName("GetHistoricalData")
         .WithTags("Data")
         .Produces<GetHistoricalDataResponse>(200)
@@ -209,7 +216,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Get data summary for a symbol
-        endpointRouteBuilder.MapGet("/api/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
         {
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
@@ -223,7 +230,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Get available providers for a symbol
-        endpointRouteBuilder.MapGet("/api/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
         {
             var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
             return Results.Ok(new GetProvidersForSymbolResponse(

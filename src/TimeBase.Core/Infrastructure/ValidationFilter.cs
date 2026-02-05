@@ -1,70 +1,136 @@
+using System.Reflection;
 using FluentValidation;
 
 namespace TimeBase.Core.Infrastructure;
 
 /// <summary>
-/// Endpoint filter that automatically validates request objects using FluentValidation.
+/// Global endpoint filter that automatically validates all request objects using FluentValidation.
 /// 
-/// Usage: .AddEndpointFilter&lt;ValidationFilter&lt;TRequest&gt;&gt;()
+/// This filter is registered globally and will automatically validate any endpoint argument
+/// that has a corresponding IValidator&lt;T&gt; registered in the dependency injection container.
 /// 
-/// This filter works best with POST/PUT/PATCH endpoints where the request object
-/// is bound from the request body. For GET endpoints with query parameters that
-/// are manually constructed in the handler, manual validation is still required.
+/// Setup:
+/// <code>
+/// // 1. Register validators automatically (in Program.cs)
+/// builder.Services.AddValidatorsFromAssemblyContaining&lt;Program&gt;();
+/// 
+/// // 2. Register this global filter (in Program.cs)
+/// builder.Services.AddSingleton&lt;GlobalValidationFilter&gt;();
+/// 
+/// // 3. Apply to all API endpoints (in Program.cs)
+/// var api = app.MapGroup("/api").AddEndpointFilter&lt;GlobalValidationFilter&gt;();
+/// </code>
+/// 
+/// How it works:
+/// - For each endpoint invocation, inspects all arguments
+/// - Checks if a validator is registered for each argument type
+/// - If a validator exists, runs validation automatically
+/// - Returns 400 Bad Request with validation errors if validation fails
+/// - Otherwise continues to the endpoint handler
 /// 
 /// Example:
 /// <code>
-/// // ✅ Works automatically (request from body)
+/// // ✅ This endpoint will be automatically validated if InstallProviderRequestValidator exists
 /// app.MapPost("/api/providers", async (InstallProviderRequest request, ...) => { })
-///    .AddEndpointFilter&lt;ValidationFilter&lt;InstallProviderRequest&gt;&gt;();
 /// 
-/// // ❌ Requires manual validation (request constructed in handler)
-/// app.MapGet("/api/data/{symbol}", async (string symbol, string interval, ...) => {
-///     var request = new GetDataRequest(symbol, interval); // Constructed manually
-///     // Need to inject IValidator and validate manually here
-/// })
+/// // ✅ No need to manually add .AddEndpointFilter&lt;ValidationFilter&lt;T&gt;&gt;()
+/// // ✅ Just create a validator class and it will be picked up automatically
 /// </code>
+/// 
+/// Benefits:
+/// - No need to manually add validation filters to each endpoint
+/// - Consistent validation behavior across all endpoints
+/// - Follows FluentValidation recommended DI patterns
+/// - Type-safe and maintainable
 /// </summary>
-public class ValidationFilter<T> : IEndpointFilter where T : class
+public class GlobalValidationFilter : IEndpointFilter
 {
-    private readonly IValidator<T>? _validator;
-
-    public ValidationFilter(IServiceProvider serviceProvider)
-    {
-        // Try to resolve validator - it's optional
-        _validator = serviceProvider.GetService<IValidator<T>>();
-    }
-
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
     {
-        // If no validator is registered, just continue
-        if (_validator == null)
+        // Iterate through all endpoint arguments and validate if validators exist
+        foreach (var argument in context.Arguments)
         {
-            return await next(context);
+            if (argument == null)
+            {
+                continue;
+            }
+
+            var argumentType = argument.GetType();
+
+            // Skip primitive types and common framework types that won't have validators
+            if (argumentType.IsPrimitive || 
+                argumentType == typeof(string) ||
+                argumentType == typeof(Guid) ||
+                argumentType == typeof(DateTime) ||
+                argumentType == typeof(CancellationToken) ||
+                argumentType.Namespace?.StartsWith("Microsoft.") == true ||
+                argumentType.Namespace?.StartsWith("System.") == true)
+            {
+                continue;
+            }
+
+            // Try to get validator from DI container
+            var validatorType = typeof(IValidator<>).MakeGenericType(argumentType);
+            var validator = context.HttpContext.RequestServices.GetService(validatorType) as IValidator;
+
+            if (validator == null)
+            {
+                continue; // No validator registered, skip validation
+            }
+
+            // Create validation context
+            var validationContextType = typeof(ValidationContext<>).MakeGenericType(argumentType);
+            var validationContext = Activator.CreateInstance(validationContextType, argument);
+
+            // Invoke ValidateAsync using reflection
+            var validateMethod = validatorType.GetMethod(
+                nameof(IValidator<object>.ValidateAsync),
+                new[] { validationContextType, typeof(CancellationToken) }
+            );
+
+            if (validateMethod == null)
+            {
+                continue;
+            }
+
+            var validationTask = validateMethod.Invoke(
+                validator,
+                new[] { validationContext, context.HttpContext.RequestAborted }
+            );
+
+            if (validationTask == null)
+            {
+                continue;
+            }
+
+            // Await the validation result
+            var validationResultProperty = validationTask.GetType().GetProperty("Result");
+            if (validationResultProperty == null)
+            {
+                // Use await pattern for Task
+                await (dynamic)validationTask;
+                validationResultProperty = validationTask.GetType().GetProperty("Result");
+            }
+
+            var validationResult = validationResultProperty?.GetValue(validationTask) as FluentValidation.Results.ValidationResult;
+
+            if (validationResult != null && !validationResult.IsValid)
+            {
+                // Build error dictionary for validation problem response
+                var errors = validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return Results.ValidationProblem(errors);
+            }
         }
 
-        // Find the request object of type T in the arguments
-        var requestObject = context.Arguments.OfType<T>().FirstOrDefault();
-        if (requestObject == null)
-        {
-            return await next(context);
-        }
-
-        // Validate the request
-        var validationResult = await _validator.ValidateAsync(requestObject);
-        if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).ToArray()
-                );
-            return Results.ValidationProblem(errors);
-        }
-
-        // Validation passed, continue to endpoint
+        // All validations passed, continue to endpoint handler
         return await next(context);
     }
 }

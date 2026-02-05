@@ -101,8 +101,11 @@ builder.Services.AddOpenTelemetry()
         metrics.AddPrometheusExporter();
     });
 
-// Add FluentValidation
+// Add FluentValidation (automatic validator registration)
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+// Add global validation filter (automatically validates all requests with registered validators)
+builder.Services.AddSingleton<GlobalValidationFilter>();
 
 // Add rate limiting
 builder.Services.AddMemoryCache();
@@ -151,10 +154,14 @@ app.UseIpRateLimiting();
 // Use infrastructure (e.g. apply migrations)
 app.Services.UseInfrastructure();
 
-// Add endpoints
+// Create API route group with global validation filter
+var api = app.MapGroup("/api")
+    .AddEndpointFilter<GlobalValidationFilter>();
+
+// Add endpoints (validation is applied automatically via the route group filter)
 app
     .AddHealthCheckEndpoints()
-    .AddTimeBaseEndpoints()
+    .AddTimeBaseEndpoints(api)  // Pass the API route group to use global validation
     .MapPrometheusScrapingEndpoint();
 
 // Map SignalR hub
