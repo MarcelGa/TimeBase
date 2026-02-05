@@ -81,41 +81,9 @@ public class GlobalValidationFilter : IEndpointFilter
                 continue; // No validator registered, skip validation
             }
 
-            // Create validation context
-            var validationContextType = typeof(ValidationContext<>).MakeGenericType(argumentType);
-            var validationContext = Activator.CreateInstance(validationContextType, argument);
-
-            // Invoke ValidateAsync using reflection
-            var validateMethod = validatorType.GetMethod(
-                nameof(IValidator<object>.ValidateAsync),
-                new[] { validationContextType, typeof(CancellationToken) }
-            );
-
-            if (validateMethod == null)
-            {
-                continue;
-            }
-
-            var validationTask = validateMethod.Invoke(
-                validator,
-                new[] { validationContext, context.HttpContext.RequestAborted }
-            );
-
-            if (validationTask == null)
-            {
-                continue;
-            }
-
-            // Await the validation result
-            var validationResultProperty = validationTask.GetType().GetProperty("Result");
-            if (validationResultProperty == null)
-            {
-                // Use await pattern for Task
-                await (dynamic)validationTask;
-                validationResultProperty = validationTask.GetType().GetProperty("Result");
-            }
-
-            var validationResult = validationResultProperty?.GetValue(validationTask) as FluentValidation.Results.ValidationResult;
+            // Use IValidator.ValidateAsync directly (non-generic interface)
+            var validationContext = new ValidationContext<object>(argument);
+            var validationResult = await validator.ValidateAsync(validationContext, context.HttpContext.RequestAborted);
 
             if (validationResult != null && !validationResult.IsValid)
             {
