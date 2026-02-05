@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - 'src/TimeBase.Core/**'
-      - 'src/TimeBase.Contracts/**'
+      - 'src/TimeBase.Plugins.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
       - 'src/TimeBase.Core.Tests.Unit/**'
       - 'src/TimeBase.Core.Tests.Integration/**'
@@ -17,7 +17,7 @@ on:
     branches: [master]
     paths:
       - 'src/TimeBase.Core/**'
-      - 'src/TimeBase.Contracts/**'
+      - 'src/TimeBase.Plugins.Contracts/**'
       - 'src/TimeBase.Core.Infrastructure/**'
       - 'src/TimeBase.Core.Tests.Unit/**'
       - 'src/TimeBase.Core.Tests.Integration/**'
