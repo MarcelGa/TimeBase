@@ -12,7 +12,7 @@ public record GetHistoricalDataRequest(
     [FromQuery] string? Interval,
     [FromQuery] DateTime? Start,
     [FromQuery] DateTime? End,
-    [FromQuery] Guid? ProviderId
+    [FromQuery] Guid ProviderId
 );
 
 public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistoricalDataRequest>
@@ -31,6 +31,9 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
             .NotEmpty().WithMessage("Symbol is required")
             .Matches(@"^[A-Z0-9\-\.]+$").WithMessage("Symbol must contain only uppercase letters, numbers, hyphens, and dots")
             .MaximumLength(20).WithMessage("Symbol must be 20 characters or less");
+
+        RuleFor(x => x.ProviderId)
+            .NotEmpty().WithMessage("ProviderId is required");
 
         RuleFor(x => x.Interval)
             .Must(BeValidInterval).WithMessage($"Interval must be one of: {string.Join(", ", ValidIntervals)}")

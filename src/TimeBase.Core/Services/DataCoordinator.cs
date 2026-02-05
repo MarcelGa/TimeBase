@@ -25,88 +25,62 @@ public class DataCoordinator(
         string interval, 
         DateTime start, 
         DateTime end,
-        Guid? providerId = null)
+        Guid providerId)
     {
         logger.LogInformation(
-            "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End}",
-            symbol, interval, start, end);
+            "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End} from provider {ProviderId}",
+            symbol, interval, start, end, providerId);
 
         var startTime = DateTime.UtcNow;
         try
         {
-            // 1. Check database first
-            var query = db.TimeSeries
-                .Where(d => d.Symbol == symbol && d.Interval == interval)
-                .Where(d => d.Time >= start && d.Time <= end);
-
-            if (providerId.HasValue)
+            // 1. Validate provider exists and is enabled
+            var provider = await providerRegistry.GetProviderByIdAsync(providerId);
+            if (provider == null)
             {
-                query = query.Where(d => d.ProviderId == providerId.Value);
+                logger.LogWarning("Provider {ProviderId} not found", providerId);
+                return new List<TimeSeriesData>();
+            }
+            
+            if (!provider.Enabled)
+            {
+                logger.LogWarning("Provider {ProviderId} ({Slug}) is disabled", providerId, provider.Slug);
+                return new List<TimeSeriesData>();
             }
 
-            var data = await query
+            // 2. Check database first for this specific provider
+            var data = await db.TimeSeries
+                .Where(d => d.Symbol == symbol && d.Interval == interval)
+                .Where(d => d.Time >= start && d.Time <= end)
+                .Where(d => d.ProviderId == providerId)
                 .OrderBy(d => d.Time)
                 .ToListAsync();
 
-            // 2. If data exists in database, return it
+            // 3. If data exists in database, return it
             if (data.Count > 0)
             {
                 var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
                 metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
-                logger.LogInformation("Fetched {Count} data points for {Symbol} from database", data.Count, symbol);
+                logger.LogInformation("Fetched {Count} data points for {Symbol} from database (provider: {Provider})", 
+                    data.Count, symbol, provider.Slug);
                 return data;
             }
 
-            // 3. No data in database - fetch from provider
-            logger.LogInformation("No data in database for {Symbol}, fetching from provider", symbol);
+            // 4. No data in database - fetch from provider
+            logger.LogInformation("No data in database for {Symbol}, fetching from provider {Provider}", 
+                symbol, provider.Slug);
 
-            // Get providers to fetch from
-            List<Provider> providersToTry;
-            if (providerId.HasValue)
-            {
-                var provider = await providerRegistry.GetProviderByIdAsync(providerId.Value);
-                if (provider == null || !provider.Enabled)
-                {
-                    logger.LogWarning("Provider {ProviderId} not found or disabled", providerId);
-                    return new List<TimeSeriesData>();
-                }
-                providersToTry = [provider];
-            }
-            else
-            {
-                // Get all enabled providers
-                providersToTry = await providerRegistry.GetAllProvidersAsync(enabled: true);
-                if (providersToTry.Count == 0)
-                {
-                    logger.LogWarning("No enabled providers available");
-                    return new List<TimeSeriesData>();
-                }
-            }
-
-            // 4. Try each provider until one returns data
-            List<TimeSeriesData> providerData = [];
-            foreach (var provider in providersToTry)
-            {
-                logger.LogDebug("Trying provider {Provider} for {Symbol}", provider.Slug, symbol);
-                
-                providerData = await providerClient.GetHistoricalDataAsync(
-                    provider, symbol, interval, start, end);
-
-                if (providerData.Count > 0)
-                {
-                    logger.LogInformation("Provider {Provider} returned {Count} data points for {Symbol}", 
-                        provider.Slug, providerData.Count, symbol);
-                    break;
-                }
-                
-                logger.LogDebug("Provider {Provider} returned no data for {Symbol}", provider.Slug, symbol);
-            }
+            var providerData = await providerClient.GetHistoricalDataAsync(
+                provider, symbol, interval, start, end);
 
             if (providerData.Count == 0)
             {
-                logger.LogInformation("No providers returned data for {Symbol}", symbol);
+                logger.LogInformation("Provider {Provider} returned no data for {Symbol}", provider.Slug, symbol);
                 return new List<TimeSeriesData>();
             }
+
+            logger.LogInformation("Provider {Provider} returned {Count} data points for {Symbol}", 
+                provider.Slug, providerData.Count, symbol);
 
             // 5. Store fetched data in database for future queries
             await StoreTimeSeriesDataAsync(providerData);
@@ -115,8 +89,8 @@ public class DataCoordinator(
             metrics.RecordDataQuery(symbol, interval, providerData.Count, totalDuration, success: true);
 
             logger.LogInformation(
-                "Fetched and stored {Count} data points for {Symbol}",
-                providerData.Count, symbol);
+                "Fetched and stored {Count} data points for {Symbol} from provider {Provider}",
+                providerData.Count, symbol, provider.Slug);
 
             return providerData;
         }
@@ -125,7 +99,7 @@ public class DataCoordinator(
             var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
             metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
             metrics.RecordError("data_query", ex.GetType().Name);
-            logger.LogError(ex, "Failed to fetch data for {Symbol}", symbol);
+            logger.LogError(ex, "Failed to fetch data for {Symbol} from provider {ProviderId}", symbol, providerId);
             throw;
         }
     }

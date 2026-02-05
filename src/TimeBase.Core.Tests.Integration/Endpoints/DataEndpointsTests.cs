@@ -34,10 +34,22 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     }
 
     [Fact]
-    public async Task GetHistoricalData_ShouldReturnBadRequest_WhenIntervalIsMissing()
+    public async Task GetHistoricalData_ShouldReturnBadRequest_WhenProviderIdIsMissing()
     {
         // Act
-        var response = await _client.GetAsync("/api/data/historical?symbol=AAPL");
+        var response = await _client.GetAsync("/api/data/AAPL?interval=1d");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("ProviderId");
+    }
+
+    [Fact]
+    public async Task GetHistoricalData_ShouldReturnBadRequest_WhenProviderIdIsInvalid()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/data/AAPL?interval=1d&providerId=invalid-guid");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -46,8 +58,11 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     [Fact]
     public async Task GetHistoricalData_ShouldReturnBadRequest_WhenIntervalIsInvalid()
     {
+        // Arrange
+        var providerId = Guid.NewGuid();
+        
         // Act
-        var response = await _client.GetAsync("/api/data/historical?symbol=AAPL&interval=invalid");
+        var response = await _client.GetAsync($"/api/data/AAPL?interval=invalid&providerId={providerId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -58,9 +73,10 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     {
         // Arrange
         var futureDate = DateTime.UtcNow.AddDays(7).ToString("yyyy-MM-dd");
+        var providerId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/data/historical?symbol=AAPL&interval=1d&start={futureDate}");
+        var response = await _client.GetAsync($"/api/data/AAPL?interval=1d&start={futureDate}&providerId={providerId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -72,9 +88,10 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
         // Arrange
         var startDate = DateTime.UtcNow.AddDays(-10).ToString("yyyy-MM-dd");
         var endDate = DateTime.UtcNow.AddDays(-20).ToString("yyyy-MM-dd");
+        var providerId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/data/historical?symbol=AAPL&interval=1d&start={startDate}&end={endDate}");
+        var response = await _client.GetAsync($"/api/data/AAPL?interval=1d&start={startDate}&end={endDate}&providerId={providerId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -83,8 +100,11 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     [Fact]
     public async Task GetHistoricalData_ShouldReturnOk_WhenValidRequest()
     {
+        // Arrange - use a random GUID as provider (will return empty data but should be 200 OK)
+        var providerId = Guid.NewGuid();
+        
         // Act
-        var response = await _client.GetAsync("/api/data/AAPL?interval=1d");
+        var response = await _client.GetAsync($"/api/data/AAPL?interval=1d&providerId={providerId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

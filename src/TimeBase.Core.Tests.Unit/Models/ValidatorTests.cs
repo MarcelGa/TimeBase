@@ -88,7 +88,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(-30),
             End: DateTime.UtcNow,
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -110,7 +110,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: "1d",
             Start: null,
             End: null,
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -118,6 +118,26 @@ public class GetHistoricalDataRequestValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Symbol);
+    }
+
+    [Fact]
+    public async Task Validate_WithEmptyProviderId_ShouldHaveError()
+    {
+        // Arrange
+        var request = new GetHistoricalDataRequest(
+            Symbol: "AAPL",
+            Interval: "1d",
+            Start: null,
+            End: null,
+            ProviderId: Guid.Empty
+        );
+
+        // Act
+        var result = await _validator.TestValidateAsync(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.ProviderId)
+            .WithErrorMessage("ProviderId is required");
     }
 
     [Theory]
@@ -138,7 +158,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: interval,
             Start: null,
             End: null,
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -161,7 +181,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: interval,
             Start: null,
             End: null,
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -180,7 +200,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(10),
             End: DateTime.UtcNow.AddDays(20),
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -199,7 +219,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(-10),
             End: DateTime.UtcNow.AddDays(-20),
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
@@ -218,7 +238,7 @@ public class GetHistoricalDataRequestValidatorTests
             Interval: "1d",
             Start: DateTime.UtcNow.AddYears(-11),
             End: DateTime.UtcNow,
-            ProviderId: null
+            ProviderId: Guid.NewGuid()
         );
 
         // Act
