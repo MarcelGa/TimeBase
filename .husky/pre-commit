@@ -1,0 +1,21 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔧 Running dotnet format on staged files..."
+
+# Run dotnet format on the entire solution
+# The --verify-no-changes flag will fail if changes are needed
+if dotnet format src/TimeBase.slnx --verify-no-changes --verbosity quiet > /dev/null 2>&1; then
+    echo "✓ Code is already formatted"
+    exit 0
+fi
+
+# If verification failed, apply formatting
+echo "  Applying formatting..."
+dotnet format src/TimeBase.slnx --verbosity quiet
+
+# Stage the formatted files
+git add -u
+
+echo "✓ Code formatted and staged"
+exit 0
