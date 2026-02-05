@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Services;
@@ -16,8 +17,8 @@ public interface IProviderClient
     /// <param name="start">Start date/time</param>
     /// <param name="end">End date/time</param>
     /// <returns>List of time series data points</returns>
-    Task<List<Infrastructure.Entities.TimeSeriesData>> GetHistoricalDataAsync(
-        Infrastructure.Entities.Provider provider,
+    Task<List<TimeSeriesData>> GetHistoricalDataAsync(
+        Provider provider,
         string symbol,
         string interval,
         DateTime start,
@@ -28,14 +29,47 @@ public interface IProviderClient
     /// </summary>
     /// <param name="provider">The provider to query</param>
     /// <returns>Provider capabilities or null if provider is unreachable</returns>
-    Task<ProviderCapabilities?> GetCapabilitiesAsync(Infrastructure.Entities.Provider provider);
+    Task<ProviderCapabilities?> GetCapabilitiesAsync(Provider provider);
 
     /// <summary>
     /// Check if a provider is healthy and reachable.
     /// </summary>
     /// <param name="provider">The provider to check</param>
     /// <returns>True if healthy, false otherwise</returns>
-    Task<bool> IsHealthyAsync(Infrastructure.Entities.Provider provider);
+    Task<bool> IsHealthyAsync(Provider provider);
+
+    /// <summary>
+    /// Stream real-time data from a provider via bidirectional gRPC streaming.
+    /// </summary>
+    /// <param name="provider">The provider to stream from</param>
+    /// <param name="controlChannel">Channel for sending subscription control messages</param>
+    /// <param name="cancellationToken">Cancellation token to stop the stream</param>
+    /// <returns>Async enumerable of time series data points</returns>
+    IAsyncEnumerable<TimeSeriesData> StreamRealTimeDataAsync(
+        Provider provider,
+        ChannelReader<StreamControlMessage> controlChannel,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Stream control message for managing real-time subscriptions.
+/// </summary>
+public record StreamControlMessage(
+    StreamControlAction Action,
+    string Symbol,
+    string Interval,
+    Dictionary<string, string>? Options = null
+);
+
+/// <summary>
+/// Actions for controlling real-time stream subscriptions.
+/// </summary>
+public enum StreamControlAction
+{
+    Subscribe = 0,
+    Unsubscribe = 1,
+    Pause = 2,
+    Resume = 3
 }
 
 /// <summary>

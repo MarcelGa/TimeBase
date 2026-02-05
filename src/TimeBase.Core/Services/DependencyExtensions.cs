@@ -6,6 +6,9 @@ public static class DependencyExtensions
         => services
             .AddSingleton<ITimeBaseMetrics, TimeBaseMetrics>()
             .AddSingleton<IProviderClient, ProviderClient>()  // Singleton for channel pooling
+            .AddSingleton<IMarketBroadcaster, MarketBroadcaster>()  // Singleton for SignalR broadcasting
+            .AddSingleton<RealTimeStreamingService>()  // Singleton for managing subscriptions
+            .AddHostedService(sp => sp.GetRequiredService<RealTimeStreamingService>())  // Register as hosted service
             .AddScoped<ProviderRegistry>()
             .AddScoped<DataCoordinator>()
             .AddHostedService<ProviderHealthMonitor>();  // Background service for health monitoring

@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -170,6 +172,129 @@ public class ProviderClient(
         catch
         {
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Stream real-time data from a provider via bidirectional gRPC streaming.
+    /// </summary>
+    public async IAsyncEnumerable<Infrastructure.Entities.TimeSeriesData> StreamRealTimeDataAsync(
+        Provider provider,
+        ChannelReader<StreamControlMessage> controlChannel,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(provider.GrpcEndpoint))
+        {
+            logger.LogWarning("Provider {Slug} has no gRPC endpoint configured", provider.Slug);
+            yield break;
+        }
+
+        logger.LogInformation(
+            "Starting real-time stream from provider {Provider} ({Endpoint})",
+            provider.Slug, provider.GrpcEndpoint);
+
+        var grpcChannel = GetOrCreateChannel(provider.GrpcEndpoint);
+        var client = new DataProvider.DataProviderClient(grpcChannel);
+
+        using var call = client.StreamRealTimeData(cancellationToken: cancellationToken);
+
+        // Start a background task to forward control messages to the gRPC stream
+        var controlTask = ForwardControlMessagesAsync(call.RequestStream, controlChannel, cancellationToken);
+
+        try
+        {
+            await foreach (var dataPoint in call.ResponseStream.ReadAllAsync(cancellationToken))
+            {
+                var data = new Infrastructure.Entities.TimeSeriesData(
+                    Time: dataPoint.Timestamp.ToDateTime(),
+                    Symbol: dataPoint.Symbol,
+                    ProviderId: provider.Id,
+                    Interval: dataPoint.Interval,
+                    Open: dataPoint.Open,
+                    High: dataPoint.High,
+                    Low: dataPoint.Low,
+                    Close: dataPoint.Close,
+                    Volume: dataPoint.Volume,
+                    Metadata: dataPoint.Metadata.Count > 0 
+                        ? System.Text.Json.JsonSerializer.Serialize(dataPoint.Metadata) 
+                        : null
+                );
+
+                logger.LogDebug(
+                    "Received real-time data for {Symbol}: C={Close}",
+                    data.Symbol, data.Close);
+
+                yield return data;
+            }
+        }
+        finally
+        {
+            // Ensure control task is completed
+            await call.RequestStream.CompleteAsync();
+            
+            try
+            {
+                await controlTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on cancellation
+            }
+            
+            logger.LogInformation(
+                "Stopped real-time stream from provider {Provider}",
+                provider.Slug);
+        }
+    }
+
+    /// <summary>
+    /// Forward control messages from the channel to the gRPC request stream.
+    /// </summary>
+    private async Task ForwardControlMessagesAsync(
+        IClientStreamWriter<StreamControl> requestStream,
+        ChannelReader<StreamControlMessage> controlChannel,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var message in controlChannel.ReadAllAsync(cancellationToken))
+            {
+                var streamControl = new StreamControl
+                {
+                    Action = message.Action switch
+                    {
+                        StreamControlAction.Subscribe => StreamControl.Types.Action.Subscribe,
+                        StreamControlAction.Unsubscribe => StreamControl.Types.Action.Unsubscribe,
+                        StreamControlAction.Pause => StreamControl.Types.Action.Pause,
+                        StreamControlAction.Resume => StreamControl.Types.Action.Resume,
+                        _ => StreamControl.Types.Action.Subscribe
+                    },
+                    Symbol = message.Symbol,
+                    Interval = message.Interval
+                };
+
+                if (message.Options != null)
+                {
+                    foreach (var kvp in message.Options)
+                    {
+                        streamControl.Options.Add(kvp.Key, kvp.Value);
+                    }
+                }
+
+                logger.LogDebug(
+                    "Sending control message: {Action} {Symbol}/{Interval}",
+                    message.Action, message.Symbol, message.Interval);
+
+                await requestStream.WriteAsync(streamControl, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on cancellation
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error forwarding control messages to gRPC stream");
         }
     }
 
