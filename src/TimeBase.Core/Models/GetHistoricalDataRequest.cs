@@ -1,4 +1,5 @@
 using FluentValidation;
+
 using Microsoft.AspNetCore.Mvc;
 
 namespace TimeBase.Core.Models;
@@ -17,7 +18,7 @@ public record GetHistoricalDataRequest(
 
 public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistoricalDataRequest>
 {
-    private static readonly string[] ValidIntervals = 
+    private static readonly string[] ValidIntervals =
     {
         "1m", "5m", "15m", "30m",
         "1h", "4h",

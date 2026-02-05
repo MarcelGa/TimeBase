@@ -48,7 +48,7 @@ public class ProviderHealthMonitor(
         logger.LogDebug("Checking health of all enabled providers");
 
         var providers = await registry.GetAllProvidersAsync(enabled: true);
-        
+
         foreach (var provider in providers)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -57,7 +57,7 @@ public class ProviderHealthMonitor(
             try
             {
                 var isHealthy = await providerClient.IsHealthyAsync(provider);
-                
+
                 if (isHealthy)
                 {
                     logger.LogDebug("Provider {Slug} is healthy", provider.Slug);

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
 using TimeBase.Core.Infrastructure.Data;
 
 namespace TimeBase.Core.Tests.Integration.Infrastructure;
@@ -22,7 +23,7 @@ public class TimeBaseWebApplicationFactory : WebApplicationFactory<Program>, IAs
     {
         // Set testing environment to skip Serilog configuration
         builder.UseEnvironment("Testing");
-        
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             // Override configuration for testing

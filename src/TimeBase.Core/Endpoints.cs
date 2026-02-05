@@ -2,12 +2,15 @@ namespace TimeBase.Core;
 
 using System;
 using System.Collections.Generic;
+
 using FluentValidation;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+
+using TimeBase.Core.Infrastructure;
 using TimeBase.Core.Models;
 using TimeBase.Core.Services;
-using TimeBase.Core.Infrastructure;
 
 public static class EndpointsExtensions
 {
@@ -24,7 +27,7 @@ public static class EndpointsExtensions
         var builder = apiGroup ?? endpointRouteBuilder;
 
         // Get all providers
-        builder.MapGet("/providers", async (ProviderRegistry registry) => 
+        builder.MapGet("/providers", async (ProviderRegistry registry) =>
         {
             var providers = await registry.GetAllProvidersAsync();
             return Results.Ok(new GetProvidersResponse(providers));
@@ -39,7 +42,7 @@ public static class EndpointsExtensions
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
-            
+
             return Results.Ok(new GetProviderResponse(provider));
         })
         .WithName("GetProvider")
@@ -50,12 +53,12 @@ public static class EndpointsExtensions
         // Install a new provider
         builder.MapPost("/providers", async (
             InstallProviderRequest request,
-            ProviderRegistry registry) => 
+            ProviderRegistry registry) =>
         {
             try
             {
                 var provider = await registry.InstallProviderAsync(request.Repository);
-                return Results.Created($"/api/providers/{provider.Id}", 
+                return Results.Created($"/api/providers/{provider.Id}",
                     new InstallProviderResponse(
                         "Provider installed successfully",
                         provider
@@ -77,12 +80,12 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Uninstall a provider
-        builder.MapDelete("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) => 
+        builder.MapDelete("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
         {
             var success = await registry.UninstallProviderAsync(id);
             if (!success)
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
-            
+
             return Results.Ok(new UninstallProviderResponse("Provider uninstalled successfully"));
         })
         .WithName("UninstallProvider")
@@ -99,7 +102,7 @@ public static class EndpointsExtensions
             var provider = await registry.SetProviderEnabledAsync(id, request.Enabled);
             if (provider == null)
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
-            
+
             return Results.Ok(new SetProviderEnabledResponse(
                 $"Provider {(provider.Enabled ? "enabled" : "disabled")} successfully",
                 provider
@@ -119,7 +122,7 @@ public static class EndpointsExtensions
             var provider = await registry.UpdateCapabilitiesAsync(id);
             if (provider == null)
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
-            
+
             var capabilities = registry.GetCachedCapabilities(provider);
             return Results.Ok(new RefreshProviderCapabilitiesResponse(
                 "Provider capabilities updated successfully",
@@ -137,7 +140,7 @@ public static class EndpointsExtensions
         {
             await registry.UpdateAllCapabilitiesAsync();
             var providers = await registry.GetAllProvidersAsync(enabled: true);
-            
+
             return Results.Ok(new RefreshAllCapabilitiesResponse(
                 "All provider capabilities updated successfully",
                 providers.Count,
@@ -159,7 +162,7 @@ public static class EndpointsExtensions
                 return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
 
             var isHealthy = await providerClient.IsHealthyAsync(provider);
-            
+
             return Results.Ok(new CheckProviderHealthResponse(
                 new ProviderHealthInfo(provider.Id, provider.Slug, provider.Name),
                 isHealthy,
@@ -174,14 +177,14 @@ public static class EndpointsExtensions
         // Get historical data
         builder.MapGet("/data/{symbol}", async (
             [AsParameters] GetHistoricalDataRequest request,
-            DataCoordinator coordinator) => 
+            DataCoordinator coordinator) =>
         {
             // Default interval if not provided
             var interval = request.Interval ?? "1d";
 
             // Default to last 30 days if no dates provided
             // Ensure DateTimes are UTC (PostgreSQL requires it)
-            var startDate = request.Start.HasValue 
+            var startDate = request.Start.HasValue
                 ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
                 : DateTime.UtcNow.AddDays(-30);
             var endDate = request.End.HasValue
@@ -221,7 +224,7 @@ public static class EndpointsExtensions
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
                 return Results.NotFound(new ErrorResponse($"No data found for symbol {symbol}"));
-            
+
             return Results.Ok(new GetDataSummaryResponse(summary));
         })
         .WithName("GetDataSummary")

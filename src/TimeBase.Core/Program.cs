@@ -1,15 +1,18 @@
-using TimeBase.Core.Services;
-using TimeBase.Core;
-using TimeBase.Core.Hubs;
-using Serilog;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Metrics;
-using FluentValidation;
 using AspNetCoreRateLimit;
 
+using FluentValidation;
+
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+using Serilog;
+
+using TimeBase.Core;
 using TimeBase.Core.Health;
+using TimeBase.Core.Hubs;
 using TimeBase.Core.Infrastructure;
+using TimeBase.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,10 +36,10 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials(); // Required for SignalR
     });
-    
+
     options.AddPolicy("Production", policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
             ?? Array.Empty<string>();
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
@@ -132,7 +135,7 @@ if (app.Environment.EnvironmentName != "Testing")
         {
             if (httpContext.Request.Path.StartsWithSegments("/health"))
                 return Serilog.Events.LogEventLevel.Verbose;
-            
+
             return Serilog.Events.LogEventLevel.Information;
         };
     });

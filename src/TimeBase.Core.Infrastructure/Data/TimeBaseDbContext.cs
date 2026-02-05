@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Infrastructure.Data;
@@ -30,7 +31,7 @@ public class TimeBaseDbContext(DbContextOptions<TimeBaseDbContext> options) : Db
             entity.Property(e => e.Capabilities).HasColumnName("capabilities").HasColumnType("jsonb");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-            
+
             entity.HasIndex(e => e.Slug).IsUnique();
         });
 
@@ -47,7 +48,7 @@ public class TimeBaseDbContext(DbContextOptions<TimeBaseDbContext> options) : Db
             entity.Property(e => e.Currency).HasColumnName("currency").HasMaxLength(10);
             entity.Property(e => e.Metadata).HasColumnName("metadata").HasColumnType("jsonb");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            
+
             entity.HasIndex(e => e.SymbolValue).IsUnique();
         });
 

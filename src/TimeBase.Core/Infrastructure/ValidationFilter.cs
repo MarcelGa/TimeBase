@@ -1,4 +1,5 @@
 using System.Reflection;
+
 using FluentValidation;
 
 namespace TimeBase.Core.Infrastructure;
@@ -60,7 +61,7 @@ public class GlobalValidationFilter : IEndpointFilter
             var argumentType = argument.GetType();
 
             // Skip primitive types and common framework types that won't have validators
-            if (argumentType.IsPrimitive || 
+            if (argumentType.IsPrimitive ||
                 argumentType == typeof(string) ||
                 argumentType == typeof(Guid) ||
                 argumentType == typeof(DateTime) ||

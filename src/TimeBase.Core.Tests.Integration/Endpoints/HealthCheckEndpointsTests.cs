@@ -1,5 +1,7 @@
 using System.Net;
+
 using FluentAssertions;
+
 using TimeBase.Core.Tests.Integration.Infrastructure;
 
 namespace TimeBase.Core.Tests.Integration.Endpoints;

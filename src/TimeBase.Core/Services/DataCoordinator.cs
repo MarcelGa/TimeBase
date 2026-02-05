@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TimeBase.Core.Infrastructure.Entities;
+
 using TimeBase.Core.Infrastructure.Data;
+using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Services;
 
@@ -10,7 +11,7 @@ namespace TimeBase.Core.Services;
 /// Checks database first, then fetches from providers via gRPC if needed.
 /// </summary>
 public class DataCoordinator(
-    TimeBaseDbContext db, 
+    TimeBaseDbContext db,
     ProviderRegistry providerRegistry,
     IProviderClient providerClient,
     ILogger<DataCoordinator> logger,
@@ -21,9 +22,9 @@ public class DataCoordinator(
     /// Strategy: Check database first, fetch from provider if missing.
     /// </summary>
     public async Task<List<TimeSeriesData>> GetHistoricalAsync(
-        string symbol, 
-        string interval, 
-        DateTime start, 
+        string symbol,
+        string interval,
+        DateTime start,
         DateTime end,
         Guid providerId)
     {
@@ -41,7 +42,7 @@ public class DataCoordinator(
                 logger.LogWarning("Provider {ProviderId} not found", providerId);
                 return new List<TimeSeriesData>();
             }
-            
+
             if (!provider.Enabled)
             {
                 logger.LogWarning("Provider {ProviderId} ({Slug}) is disabled", providerId, provider.Slug);
@@ -61,13 +62,13 @@ public class DataCoordinator(
             {
                 var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
                 metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
-                logger.LogInformation("Fetched {Count} data points for {Symbol} from database (provider: {Provider})", 
+                logger.LogInformation("Fetched {Count} data points for {Symbol} from database (provider: {Provider})",
                     data.Count, symbol, provider.Slug);
                 return data;
             }
 
             // 4. No data in database - fetch from provider
-            logger.LogInformation("No data in database for {Symbol}, fetching from provider {Provider}", 
+            logger.LogInformation("No data in database for {Symbol}, fetching from provider {Provider}",
                 symbol, provider.Slug);
 
             var providerData = await providerClient.GetHistoricalDataAsync(
@@ -79,7 +80,7 @@ public class DataCoordinator(
                 return new List<TimeSeriesData>();
             }
 
-            logger.LogInformation("Provider {Provider} returned {Count} data points for {Symbol}", 
+            logger.LogInformation("Provider {Provider} returned {Count} data points for {Symbol}",
                 provider.Slug, providerData.Count, symbol);
 
             // 5. Store fetched data in database for future queries
@@ -158,8 +159,8 @@ public class DataCoordinator(
             await db.SaveChangesAsync();
 
             // Record metrics - extract symbol if all points have same symbol
-            var symbol = list.Select(d => d.Symbol).Distinct().Count() == 1 
-                ? list.First().Symbol 
+            var symbol = list.Select(d => d.Symbol).Distinct().Count() == 1
+                ? list.First().Symbol
                 : null;
             metrics.RecordDataStore(list.Count, symbol, success: true);
 

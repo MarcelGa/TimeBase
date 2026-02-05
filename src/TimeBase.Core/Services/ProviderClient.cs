@@ -1,11 +1,16 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+
 using Google.Protobuf.WellKnownTypes;
+
 using Grpc.Core;
 using Grpc.Net.Client;
+
 using Microsoft.Extensions.Logging;
-using TimeBase.Core.Infrastructure.Entities;
+
 using Timebase.Provider;
+
+using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Services;
 
@@ -53,7 +58,7 @@ public class ProviderClient(
             };
 
             var result = new List<Infrastructure.Entities.TimeSeriesData>();
-            
+
             using var call = client.GetHistoricalData(request);
 
             await foreach (var dataPoint in call.ResponseStream.ReadAllAsync())
@@ -68,8 +73,8 @@ public class ProviderClient(
                     Low: dataPoint.Low,
                     Close: dataPoint.Close,
                     Volume: dataPoint.Volume,
-                    Metadata: dataPoint.Metadata.Count > 0 
-                        ? System.Text.Json.JsonSerializer.Serialize(dataPoint.Metadata) 
+                    Metadata: dataPoint.Metadata.Count > 0
+                        ? System.Text.Json.JsonSerializer.Serialize(dataPoint.Metadata)
                         : null
                 ));
             }
@@ -87,8 +92,8 @@ public class ProviderClient(
         {
             var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
             metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
-            logger.LogError(ex, 
-                "Provider {Provider} is unavailable at {Endpoint}", 
+            logger.LogError(ex,
+                "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
             return new List<Infrastructure.Entities.TimeSeriesData>();
         }
@@ -97,8 +102,8 @@ public class ProviderClient(
             var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
             metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
             metrics.RecordError("provider_grpc_call", ex.GetType().Name);
-            logger.LogError(ex, 
-                "Failed to fetch data from provider {Provider}", 
+            logger.LogError(ex,
+                "Failed to fetch data from provider {Provider}",
                 provider.Slug);
             throw;
         }
@@ -134,16 +139,16 @@ public class ProviderClient(
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
         {
-            logger.LogWarning(ex, 
-                "Provider {Provider} is unavailable at {Endpoint}", 
+            logger.LogWarning(ex,
+                "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
             return null;
         }
         catch (Exception ex)
         {
             metrics.RecordError("provider_capabilities", ex.GetType().Name);
-            logger.LogError(ex, 
-                "Failed to get capabilities from provider {Provider}", 
+            logger.LogError(ex,
+                "Failed to get capabilities from provider {Provider}",
                 provider.Slug);
             return null;
         }
@@ -164,7 +169,7 @@ public class ProviderClient(
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
             var client = new DataProvider.DataProviderClient(channel);
 
-            var response = await client.HealthCheckAsync(new Empty(), 
+            var response = await client.HealthCheckAsync(new Empty(),
                 deadline: DateTime.UtcNow.AddSeconds(5));
 
             return response.Status == HealthStatus.Types.Status.Healthy;
@@ -215,8 +220,8 @@ public class ProviderClient(
                     Low: dataPoint.Low,
                     Close: dataPoint.Close,
                     Volume: dataPoint.Volume,
-                    Metadata: dataPoint.Metadata.Count > 0 
-                        ? System.Text.Json.JsonSerializer.Serialize(dataPoint.Metadata) 
+                    Metadata: dataPoint.Metadata.Count > 0
+                        ? System.Text.Json.JsonSerializer.Serialize(dataPoint.Metadata)
                         : null
                 );
 
@@ -231,7 +236,7 @@ public class ProviderClient(
         {
             // Ensure control task is completed
             await call.RequestStream.CompleteAsync();
-            
+
             try
             {
                 await controlTask;
@@ -240,7 +245,7 @@ public class ProviderClient(
             {
                 // Expected on cancellation
             }
-            
+
             logger.LogInformation(
                 "Stopped real-time stream from provider {Provider}",
                 provider.Slug);

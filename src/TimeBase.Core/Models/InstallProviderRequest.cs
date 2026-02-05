@@ -24,10 +24,10 @@ public class InstallProviderRequestValidator : AbstractValidator<InstallProvider
     {
         if (string.IsNullOrWhiteSpace(url))
             return false;
-            
+
         var lowerUrl = url.ToLowerInvariant();
-        return lowerUrl.Contains("github.com") 
-            || lowerUrl.Contains("gitlab.com") 
+        return lowerUrl.Contains("github.com")
+            || lowerUrl.Contains("gitlab.com")
             || lowerUrl.Contains("bitbucket.org")
             || lowerUrl.EndsWith(".git");
     }

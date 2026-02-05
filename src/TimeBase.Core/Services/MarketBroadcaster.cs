@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+
 using TimeBase.Core.Hubs;
 using TimeBase.Core.Infrastructure.Entities;
 
@@ -40,7 +41,7 @@ public class MarketBroadcaster : IMarketBroadcaster
         {
             var symbol = data.Symbol.ToUpperInvariant();
             await _hubContext.Clients.Group(symbol).SendAsync("ReceivePriceUpdate", data);
-            
+
             _logger.LogDebug(
                 "Broadcasted price update for {Symbol}: O={Open}, H={High}, L={Low}, C={Close}",
                 symbol, data.Open, data.High, data.Low, data.Close);
@@ -63,7 +64,7 @@ public class MarketBroadcaster : IMarketBroadcaster
                 // Send the latest data point for each symbol
                 var latestData = group.OrderByDescending(d => d.Time).First();
                 await _hubContext.Clients.Group(group.Key).SendAsync("ReceivePriceUpdate", latestData);
-                
+
                 _logger.LogDebug(
                     "Broadcasted price update for {Symbol}: C={Close}",
                     group.Key, latestData.Close);

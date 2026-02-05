@@ -1,6 +1,7 @@
 using System.Net;
 
 using FluentAssertions;
+
 using TimeBase.Core.Tests.Integration.Infrastructure;
 
 namespace TimeBase.Core.Tests.Integration.Endpoints;
@@ -60,7 +61,7 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     {
         // Arrange
         var providerId = Guid.NewGuid();
-        
+
         // Act
         var response = await _client.GetAsync($"/api/data/AAPL?interval=invalid&providerId={providerId}");
 
@@ -102,7 +103,7 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     {
         // Arrange - use a random GUID as provider (will return empty data but should be 200 OK)
         var providerId = Guid.NewGuid();
-        
+
         // Act
         var response = await _client.GetAsync($"/api/data/AAPL?interval=1d&providerId={providerId}");
 

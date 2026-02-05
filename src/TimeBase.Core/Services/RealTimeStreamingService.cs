@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
 using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Services;
@@ -188,7 +190,7 @@ public class RealTimeStreamingService : BackgroundService
                     if (newCount <= 0)
                     {
                         providerSubs.TryRemove(subscriptionKey, out _);
-                        
+
                         // Send unsubscribe to provider
                         await SendControlMessageAsync(provider.Slug, new StreamControlMessage(
                             StreamControlAction.Unsubscribe,

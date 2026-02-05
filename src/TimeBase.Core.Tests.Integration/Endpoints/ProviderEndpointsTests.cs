@@ -2,8 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 
 using FluentAssertions;
-using TimeBase.Core.Tests.Integration.Infrastructure;
+
 using TimeBase.Core.Models;
+using TimeBase.Core.Tests.Integration.Infrastructure;
 
 namespace TimeBase.Core.Tests.Integration.Endpoints;
 

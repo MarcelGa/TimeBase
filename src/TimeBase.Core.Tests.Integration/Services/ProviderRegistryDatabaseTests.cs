@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
 using TimeBase.Core.Tests.Integration.Infrastructure;

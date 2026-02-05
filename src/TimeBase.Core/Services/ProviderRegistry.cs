@@ -1,13 +1,15 @@
 using System.Text.Json;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
 
 namespace TimeBase.Core.Services;
 
 public class ProviderRegistry(
-    TimeBaseDbContext db, 
+    TimeBaseDbContext db,
     ILogger<ProviderRegistry> logger,
     ITimeBaseMetrics metrics,
     IProviderClient providerClient)
@@ -20,10 +22,10 @@ public class ProviderRegistry(
     public async Task<Provider> InstallProviderAsync(string repositoryUrl)
     {
         logger.LogInformation("Installing provider from {RepositoryUrl}", repositoryUrl);
-        
+
         // Extract a reasonable slug from the repository URL
         var slug = ExtractSlugFromUrl(repositoryUrl);
-        
+
         try
         {
             // Check if provider already exists
@@ -34,7 +36,7 @@ public class ProviderRegistry(
                 metrics.RecordProviderInstall(slug, success: true);
                 return existing;
             }
-            
+
             var provider = new Provider(
                 Id: Guid.NewGuid(),
                 Slug: slug,
@@ -49,13 +51,13 @@ public class ProviderRegistry(
                 CreatedAt: DateTime.UtcNow,
                 UpdatedAt: DateTime.UtcNow
             );
-            
+
             db.Providers.Add(provider);
             await db.SaveChangesAsync();
-            
+
             metrics.RecordProviderInstall(slug, success: true);
             metrics.UpdateActiveProviders(1);
-            
+
             logger.LogInformation("Provider {Slug} installed successfully with ID {ProviderId}", slug, provider.Id);
             return provider;
         }
@@ -74,12 +76,12 @@ public class ProviderRegistry(
     public async Task<List<Provider>> GetAllProvidersAsync(bool? enabled = null)
     {
         var query = db.Providers.AsQueryable();
-        
+
         if (enabled.HasValue)
         {
             query = query.Where(p => p.Enabled == enabled.Value);
         }
-        
+
         return await query.OrderBy(p => p.CreatedAt).ToListAsync();
     }
 
@@ -107,25 +109,25 @@ public class ProviderRegistry(
     public async Task<bool> UninstallProviderAsync(Guid id)
     {
         logger.LogInformation("Uninstalling provider {ProviderId}", id);
-        
+
         var provider = await db.Providers.FindAsync(id);
         if (provider == null)
         {
             logger.LogWarning("Provider {ProviderId} not found for uninstall", id);
             return false;
         }
-        
+
         try
         {
             db.Providers.Remove(provider);
             await db.SaveChangesAsync();
-            
+
             metrics.RecordProviderUninstall(provider.Slug, success: true);
             if (provider.Enabled)
             {
                 metrics.UpdateActiveProviders(-1);
             }
-            
+
             logger.LogInformation("Provider {Slug} uninstalled successfully", provider.Slug);
             return true;
         }
@@ -149,22 +151,22 @@ public class ProviderRegistry(
             logger.LogWarning("Provider {ProviderId} not found", id);
             return null;
         }
-        
+
         // Track change in active providers
         if (provider.Enabled != enabled)
         {
             metrics.UpdateActiveProviders(enabled ? 1 : -1);
         }
-        
-        var updated = provider with 
-        { 
-            Enabled = enabled, 
-            UpdatedAt = DateTime.UtcNow 
+
+        var updated = provider with
+        {
+            Enabled = enabled,
+            UpdatedAt = DateTime.UtcNow
         };
-        
+
         db.Entry(provider).CurrentValues.SetValues(updated);
         await db.SaveChangesAsync();
-        
+
         logger.LogInformation("Provider {Slug} {Status}", provider.Slug, enabled ? "enabled" : "disabled");
         return updated;
     }
@@ -175,13 +177,13 @@ public class ProviderRegistry(
         // Result: yahoo or timebase-provider-yahoo
         var parts = url.TrimEnd('/').Split('/');
         var repoName = parts[^1].Replace(".git", "");
-        
+
         // Try to extract provider name from repo name
         if (repoName.StartsWith("timebase-provider-", StringComparison.OrdinalIgnoreCase))
         {
             return repoName["timebase-provider-".Length..].ToLowerInvariant();
         }
-        
+
         // Fallback: use full repo name as slug
         return repoName.ToLowerInvariant();
     }
@@ -189,7 +191,7 @@ public class ProviderRegistry(
     private static string ExtractNameFromUrl(string url)
     {
         var slug = ExtractSlugFromUrl(url);
-        
+
         // Convert slug to a friendly name: yahoo -> Yahoo Finance Provider
         return $"{char.ToUpper(slug[0])}{slug[1..]} Provider";
     }
@@ -219,12 +221,12 @@ public class ProviderRegistry(
             }
 
             var capabilitiesJson = JsonSerializer.Serialize(capabilities);
-            var updated = provider with 
-            { 
+            var updated = provider with
+            {
                 Capabilities = capabilitiesJson,
                 Version = capabilities.Version, // Update version from provider
                 Name = capabilities.Name, // Update name from provider
-                UpdatedAt = DateTime.UtcNow 
+                UpdatedAt = DateTime.UtcNow
             };
 
             db.Entry(provider).CurrentValues.SetValues(updated);
@@ -232,8 +234,8 @@ public class ProviderRegistry(
 
             logger.LogInformation(
                 "Updated capabilities for provider {Slug}: Historical={Historical}, Realtime={Realtime}, DataTypes={DataTypes}",
-                provider.Slug, 
-                capabilities.SupportsHistorical, 
+                provider.Slug,
+                capabilities.SupportsHistorical,
                 capabilities.SupportsRealtime,
                 string.Join(", ", capabilities.DataTypes));
 
@@ -277,7 +279,7 @@ public class ProviderRegistry(
         logger.LogInformation("Updating capabilities for all enabled providers");
 
         var enabledProviders = await GetAllProvidersAsync(enabled: true);
-        
+
         // Process sequentially to avoid DbContext concurrency issues
         foreach (var provider in enabledProviders)
         {

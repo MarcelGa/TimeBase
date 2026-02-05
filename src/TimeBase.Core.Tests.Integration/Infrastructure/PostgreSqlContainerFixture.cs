@@ -1,5 +1,7 @@
 using Npgsql;
+
 using Respawn;
+
 using Testcontainers.PostgreSql;
 
 namespace TimeBase.Core.Tests.Integration.Infrastructure;
@@ -35,7 +37,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
 
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync();
-        
+
         _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,

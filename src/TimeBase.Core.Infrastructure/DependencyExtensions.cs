@@ -13,13 +13,13 @@ public static class DependencyExtensions
     {
         services.AddDbContext<TimeBaseDbContext>(opts =>
             opts.UseNpgsql(configuration.GetConnectionString("TimeBaseDb")));
-    
+
         // Add health checks
         // Note: Only using DbContext health check to ensure it works properly in tests
         // The DbContext check will verify PostgreSQL/TimescaleDB connectivity
         healthChecksBuilder
             .AddDbContextCheck<TimeBaseDbContext>(name: "database", tags: new[] { "db", "ready" });
-        
+
         return services;
     }
 
@@ -29,14 +29,14 @@ public static class DependencyExtensions
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<TimeBaseDbContext>>();
-        
-        try 
-        { 
+
+        try
+        {
             logger.LogInformation("Applying database migrations...");
-            db.Database.Migrate(); 
+            db.Database.Migrate();
             logger.LogInformation("Database migrations applied successfully");
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             logger.LogError(ex, "Failed to apply database migrations");
         }

@@ -9,7 +9,7 @@ public static class Endpoints
             Predicate = _ => false, // No checks, just returns that the app is running
             AllowCachingResponses = false
         });
-        
+
         app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains("ready"), // Only checks tagged with "ready"
@@ -32,7 +32,7 @@ public static class Endpoints
                 await context.Response.WriteAsync(result);
             }
         });
-        
+
         app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
         {
             Predicate = _ => true, // All health checks
