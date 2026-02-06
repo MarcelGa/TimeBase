@@ -41,7 +41,7 @@ public class ProviderHealthMonitor(
     {
         // Create a scope to get scoped services (DbContext is scoped)
         using var scope = serviceProvider.CreateScope();
-        var registry = scope.ServiceProvider.GetRequiredService<ProviderRegistry>();
+        var registry = scope.ServiceProvider.GetRequiredService<IProviderRegistry>();
         var providerClient = scope.ServiceProvider.GetRequiredService<IProviderClient>();
         var metrics = scope.ServiceProvider.GetRequiredService<ITimeBaseMetrics>();
 

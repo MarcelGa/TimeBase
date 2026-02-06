@@ -12,7 +12,7 @@ namespace TimeBase.Core.Services;
 /// </summary>
 public class DataCoordinator(
     TimeBaseDbContext db,
-    ProviderRegistry providerRegistry,
+    IProviderRegistry providerRegistry,
     IProviderClient providerClient,
     ILogger<DataCoordinator> logger,
     ITimeBaseMetrics metrics)

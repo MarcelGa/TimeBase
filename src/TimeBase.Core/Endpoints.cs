@@ -27,7 +27,7 @@ public static class EndpointsExtensions
         var builder = apiGroup ?? endpointRouteBuilder;
 
         // Get all providers
-        builder.MapGet("/providers", async (ProviderRegistry registry) =>
+        builder.MapGet("/providers", async (IProviderRegistry registry) =>
         {
             var providers = await registry.GetAllProvidersAsync();
             return Results.Ok(new GetProvidersResponse(providers));
@@ -37,7 +37,7 @@ public static class EndpointsExtensions
         .Produces<GetProvidersResponse>(200);
 
         // Get provider by ID
-        builder.MapGet("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
+        builder.MapGet("/providers/{id:guid}", async (Guid id, IProviderRegistry registry) =>
         {
             var provider = await registry.GetProviderByIdAsync(id);
             if (provider == null)
@@ -53,7 +53,7 @@ public static class EndpointsExtensions
         // Install a new provider
         builder.MapPost("/providers", async (
             InstallProviderRequest request,
-            ProviderRegistry registry) =>
+            IProviderRegistry registry) =>
         {
             try
             {
@@ -80,7 +80,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Uninstall a provider
-        builder.MapDelete("/providers/{id:guid}", async (Guid id, ProviderRegistry registry) =>
+        builder.MapDelete("/providers/{id:guid}", async (Guid id, IProviderRegistry registry) =>
         {
             var success = await registry.UninstallProviderAsync(id);
             if (!success)
@@ -97,7 +97,7 @@ public static class EndpointsExtensions
         builder.MapPatch("/providers/{id:guid}/enabled", async (
             Guid id,
             SetProviderEnabledRequest request,
-            ProviderRegistry registry) =>
+            IProviderRegistry registry) =>
         {
             var provider = await registry.SetProviderEnabledAsync(id, request.Enabled);
             if (provider == null)
@@ -117,7 +117,7 @@ public static class EndpointsExtensions
         // Refresh provider capabilities
         builder.MapPost("/providers/{id:guid}/capabilities", async (
             Guid id,
-            ProviderRegistry registry) =>
+            IProviderRegistry registry) =>
         {
             var provider = await registry.UpdateCapabilitiesAsync(id);
             if (provider == null)
@@ -136,7 +136,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Refresh all provider capabilities
-        builder.MapPost("/providers/capabilities/refresh", async (ProviderRegistry registry) =>
+        builder.MapPost("/providers/capabilities/refresh", async (IProviderRegistry registry) =>
         {
             await registry.UpdateAllCapabilitiesAsync();
             var providers = await registry.GetAllProvidersAsync(enabled: true);
@@ -154,7 +154,7 @@ public static class EndpointsExtensions
         // Check provider health
         builder.MapGet("/providers/{id:guid}/health", async (
             Guid id,
-            ProviderRegistry registry,
+            IProviderRegistry registry,
             IProviderClient providerClient) =>
         {
             var provider = await registry.GetProviderByIdAsync(id);

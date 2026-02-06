@@ -12,7 +12,7 @@ public class ProviderRegistry(
     TimeBaseDbContext db,
     ILogger<ProviderRegistry> logger,
     ITimeBaseMetrics metrics,
-    IProviderClient providerClient)
+    IProviderClient providerClient) : IProviderRegistry
 {
     /// <summary>
     /// Install a provider from a repository URL.
