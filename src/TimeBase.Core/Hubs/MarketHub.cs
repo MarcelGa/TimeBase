@@ -9,18 +9,10 @@ namespace TimeBase.Core.Hubs;
 /// SignalR hub for real-time market data updates.
 /// Clients can subscribe to specific symbols to receive price updates.
 /// </summary>
-public class MarketHub : Hub
+public class MarketHub(
+    ILogger<MarketHub> logger,
+    RealTimeStreamingService streamingService) : Hub
 {
-    private readonly ILogger<MarketHub> _logger;
-    private readonly RealTimeStreamingService _streamingService;
-
-    public MarketHub(
-        ILogger<MarketHub> logger,
-        RealTimeStreamingService streamingService)
-    {
-        _logger = logger;
-        _streamingService = streamingService;
-    }
 
     /// <summary>
     /// Subscribe to price updates for a specific symbol.
@@ -35,9 +27,9 @@ public class MarketHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, normalizedSymbol);
 
         // Subscribe to real-time data from providers
-        await _streamingService.SubscribeAsync(normalizedSymbol, interval);
+        await streamingService.SubscribeAsync(normalizedSymbol, interval);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Client {ConnectionId} subscribed to symbol {Symbol}/{Interval}",
             Context.ConnectionId, normalizedSymbol, interval);
     }
@@ -55,22 +47,22 @@ public class MarketHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, normalizedSymbol);
 
         // Unsubscribe from real-time data from providers
-        await _streamingService.UnsubscribeAsync(normalizedSymbol, interval);
+        await streamingService.UnsubscribeAsync(normalizedSymbol, interval);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Client {ConnectionId} unsubscribed from symbol {Symbol}/{Interval}",
             Context.ConnectionId, normalizedSymbol, interval);
     }
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+        logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        _logger.LogInformation(
+        logger.LogInformation(
             "Client disconnected: {ConnectionId}. Reason: {Exception}",
             Context.ConnectionId, exception?.Message ?? "Normal disconnect");
         await base.OnDisconnectedAsync(exception);

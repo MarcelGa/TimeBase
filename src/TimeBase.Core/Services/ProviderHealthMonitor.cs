@@ -8,7 +8,8 @@ namespace TimeBase.Core.Services;
 /// </summary>
 public class ProviderHealthMonitor(
     ILogger<ProviderHealthMonitor> logger,
-    IServiceProvider serviceProvider) : BackgroundService
+    IServiceProvider serviceProvider,
+    ITimeBaseMetrics metrics) : BackgroundService
 {
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(5);
 
@@ -43,7 +44,6 @@ public class ProviderHealthMonitor(
         using var scope = serviceProvider.CreateScope();
         var registry = scope.ServiceProvider.GetRequiredService<IProviderRegistry>();
         var providerClient = scope.ServiceProvider.GetRequiredService<IProviderClient>();
-        var metrics = scope.ServiceProvider.GetRequiredService<ITimeBaseMetrics>();
 
         logger.LogDebug("Checking health of all enabled providers");
 
