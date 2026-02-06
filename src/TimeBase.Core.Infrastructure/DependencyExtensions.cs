@@ -39,6 +39,7 @@ public static class DependencyExtensions
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to apply database migrations");
+            throw;
         }
     }
 }
