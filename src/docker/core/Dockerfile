@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.102-noble-amd64 AS build
 WORKDIR /src
 
 # Copy project files for restore
-COPY src/TimeBase.Contracts/TimeBase.Contracts.csproj ./TimeBase.Contracts/
+COPY src/TimeBase.Plugins.Contracts/TimeBase.Plugins.Contracts.csproj ./TimeBase.Plugins.Contracts/
 COPY src/TimeBase.Core.Infrastructure/TimeBase.Core.Infrastructure.csproj ./TimeBase.Core.Infrastructure/
 COPY src/TimeBase.Core/TimeBase.Core.csproj ./TimeBase.Core/
 
@@ -11,7 +11,7 @@ COPY src/TimeBase.Core/TimeBase.Core.csproj ./TimeBase.Core/
 RUN dotnet restore TimeBase.Core/TimeBase.Core.csproj
 
 # Copy all source files
-COPY src/TimeBase.Contracts/ ./TimeBase.Contracts/
+COPY src/TimeBase.Plugins.Contracts/ ./TimeBase.Plugins.Contracts/
 COPY src/TimeBase.Core.Infrastructure/ ./TimeBase.Core.Infrastructure/
 COPY src/TimeBase.Core/ ./TimeBase.Core/
 
