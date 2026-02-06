@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
@@ -21,7 +22,7 @@ public class ProviderClient(
     ILogger<ProviderClient> logger,
     ITimeBaseMetrics metrics) : IProviderClient
 {
-    private readonly Dictionary<string, GrpcChannel> _channels = new();
+    private readonly ConcurrentDictionary<string, GrpcChannel> _channels = new();
 
     /// <summary>
     /// Fetch historical time series data from a provider via gRPC.
@@ -305,30 +306,26 @@ public class ProviderClient(
 
     /// <summary>
     /// Get or create a gRPC channel for the given endpoint.
-    /// Channels are cached for reuse.
+    /// Channels are cached for reuse (thread-safe).
     /// </summary>
     private GrpcChannel GetOrCreateChannel(string endpoint)
     {
-        if (_channels.TryGetValue(endpoint, out var existingChannel))
+        return _channels.GetOrAdd(endpoint, ep =>
         {
-            return existingChannel;
-        }
-
-        // Create channel with HTTP/2 over plain text (for internal Docker network)
-        var channel = GrpcChannel.ForAddress($"http://{endpoint}", new GrpcChannelOptions
-        {
-            HttpHandler = new SocketsHttpHandler
+            // Create channel with HTTP/2 over plain text (for internal Docker network)
+            var channel = GrpcChannel.ForAddress($"http://{ep}", new GrpcChannelOptions
             {
-                PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
-                KeepAlivePingDelay = TimeSpan.FromSeconds(60),
-                KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
-                EnableMultipleHttp2Connections = true
-            }
+                HttpHandler = new SocketsHttpHandler
+                {
+                    PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+                    KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                    KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+                    EnableMultipleHttp2Connections = true
+                }
+            });
+
+            logger.LogInformation("Created gRPC channel to {Endpoint}", ep);
+            return channel;
         });
-
-        _channels[endpoint] = channel;
-        logger.LogInformation("Created gRPC channel to {Endpoint}", endpoint);
-
-        return channel;
     }
 }
