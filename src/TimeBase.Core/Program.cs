@@ -9,6 +9,7 @@ using OpenTelemetry.Trace;
 using Serilog;
 
 using TimeBase.Core;
+using TimeBase.Core.Endpoints;
 using TimeBase.Core.Health;
 using TimeBase.Core.Hubs;
 using TimeBase.Core.Infrastructure;
@@ -161,7 +162,8 @@ var api = app.MapGroup("/api")
 // Add endpoints (validation is applied automatically via the route group filter)
 app
     .AddHealthCheckEndpoints()
-    .AddTimeBaseEndpoints(api)  // Pass the API route group to use global validation
+    .AddProviderEndpoints(api)  // Provider management endpoints
+    .AddDataEndpoints(api)      // Data query endpoints
     .MapPrometheusScrapingEndpoint();
 
 // Map SignalR hub

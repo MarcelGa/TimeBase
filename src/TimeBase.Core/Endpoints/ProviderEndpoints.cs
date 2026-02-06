@@ -1,25 +1,19 @@
-namespace TimeBase.Core;
+namespace TimeBase.Core.Endpoints;
 
 using System;
-using System.Collections.Generic;
-
-using FluentValidation;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-using TimeBase.Core.Infrastructure;
 using TimeBase.Core.Models;
 using TimeBase.Core.Services;
 
-public static class EndpointsExtensions
+public static class ProviderEndpoints
 {
     /// <summary>
-    /// Adds TimeBase API endpoints. Can optionally use a route group for applying global filters.
+    /// Adds provider management endpoints.
     /// </summary>
-    /// <param name="endpointRouteBuilder">The main endpoint route builder (app)</param>
-    /// <param name="apiGroup">Optional API route group with global validation filter applied</param>
-    public static IEndpointRouteBuilder AddTimeBaseEndpoints(
+    public static IEndpointRouteBuilder AddProviderEndpoints(
         this IEndpointRouteBuilder endpointRouteBuilder,
         IEndpointRouteBuilder? apiGroup = null)
     {
@@ -173,78 +167,6 @@ public static class EndpointsExtensions
         .WithTags("Providers")
         .Produces<CheckProviderHealthResponse>(200)
         .Produces<ErrorResponse>(404);
-
-        // Get historical data
-        builder.MapGet("/data/{symbol}", async (
-            [AsParameters] GetHistoricalDataRequest request,
-            IDataCoordinator coordinator) =>
-        {
-            // Default interval if not provided
-            var interval = request.Interval ?? "1d";
-
-            // Default to last 30 days if no dates provided
-            // Ensure DateTimes are UTC (PostgreSQL requires it)
-            var startDate = request.Start.HasValue
-                ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
-                : DateTime.UtcNow.AddDays(-30);
-            var endDate = request.End.HasValue
-                ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
-                : DateTime.UtcNow;
-
-            try
-            {
-                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.ProviderId);
-                return Results.Ok(new GetHistoricalDataResponse(
-                    request.Symbol,
-                    interval,
-                    startDate,
-                    endDate,
-                    data.Count,
-                    data
-                ));
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(
-                    title: "Failed to fetch data",
-                    detail: ex.Message,
-                    statusCode: 500
-                );
-            }
-        })
-        .WithName("GetHistoricalData")
-        .WithTags("Data")
-        .Produces<GetHistoricalDataResponse>(200)
-        .ProducesValidationProblem()
-        .Produces(500);
-
-        // Get data summary for a symbol
-        builder.MapGet("/data/{symbol}/summary", async (string symbol, IDataCoordinator coordinator) =>
-        {
-            var summary = await coordinator.GetDataSummaryAsync(symbol);
-            if (summary == null)
-                return Results.NotFound(new ErrorResponse($"No data found for symbol {symbol}"));
-
-            return Results.Ok(new GetDataSummaryResponse(summary));
-        })
-        .WithName("GetDataSummary")
-        .WithTags("Data")
-        .Produces<GetDataSummaryResponse>(200)
-        .Produces<ErrorResponse>(404);
-
-        // Get available providers for a symbol
-        builder.MapGet("/data/{symbol}/providers", async (string symbol, IDataCoordinator coordinator) =>
-        {
-            var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
-            return Results.Ok(new GetProvidersForSymbolResponse(
-                symbol,
-                providers.Count,
-                providers
-            ));
-        })
-        .WithName("GetProvidersForSymbol")
-        .WithTags("Data")
-        .Produces<GetProvidersForSymbolResponse>(200);
 
         return endpointRouteBuilder;
     }
