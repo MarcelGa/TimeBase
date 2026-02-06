@@ -328,4 +328,25 @@ public class ProviderClient(
             return channel;
         });
     }
+
+    /// <summary>
+    /// Dispose all cached gRPC channels.
+    /// </summary>
+    public void Dispose()
+    {
+        foreach (var channel in _channels.Values)
+        {
+            try
+            {
+                channel.Dispose();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error disposing gRPC channel");
+            }
+        }
+
+        _channels.Clear();
+        logger.LogInformation("Disposed all gRPC channels");
+    }
 }

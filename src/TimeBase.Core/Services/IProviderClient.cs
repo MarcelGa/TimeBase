@@ -7,7 +7,7 @@ namespace TimeBase.Core.Services;
 /// <summary>
 /// Interface for communicating with data providers via gRPC.
 /// </summary>
-public interface IProviderClient
+public interface IProviderClient : IDisposable
 {
     /// <summary>
     /// Fetch historical time series data from a provider.
