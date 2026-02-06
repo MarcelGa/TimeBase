@@ -25,7 +25,7 @@ class TimeSeriesData:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for JSON serialization."""
-        result = {
+        result: Dict[str, Any] = {
             "symbol": self.symbol,
             "timestamp": self.timestamp.isoformat(),
             "open": self.open,
@@ -97,6 +97,30 @@ class TimeSeriesData:
 
 
 @dataclass
+class SymbolInfo:
+    """Symbol metadata returned by providers."""
+    symbol: str
+    name: str
+    type: str
+    intervals: List[str]
+    metadata: Optional[Dict[str, Any]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        result: Dict[str, Any] = {
+            "symbol": self.symbol,
+            "name": self.name,
+            "type": self.type,
+            "intervals": self.intervals,
+        }
+
+        if self.metadata:
+            result["metadata"] = self.metadata
+
+        return result
+
+
+@dataclass
 class ProviderCapabilitiesResponse:
     """Response from get_capabilities method."""
     name: str
@@ -112,7 +136,7 @@ class ProviderCapabilitiesResponse:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        result = {
+        result: Dict[str, Any] = {
             "name": self.name,
             "version": self.version,
             "slug": self.slug,
@@ -140,7 +164,7 @@ class HealthStatus:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        result = {
+        result: Dict[str, Any] = {
             "status": self.status,
             "message": self.message,
             "timestamp": self.timestamp.isoformat(),
@@ -162,7 +186,7 @@ class StreamControl:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        result = {
+        result: Dict[str, Any] = {
             "action": self.action,
             "symbol": self.symbol,
             "interval": self.interval,
@@ -185,7 +209,7 @@ class ErrorInfo:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        result = {
+        result: Dict[str, Any] = {
             "code": self.code,
             "message": self.message,
         }

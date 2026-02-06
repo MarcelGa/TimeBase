@@ -137,6 +137,19 @@ class TimeBaseProvider(ABC):
         """
         pass
 
+    async def get_symbols(self) -> list[dict]:
+        """Return the list of symbols supported by this provider.
+
+        Returns:
+            list[dict]: Symbol info entries including:
+                - symbol: str
+                - name: str
+                - type: str
+                - intervals: list[str]
+                - metadata: dict (optional)
+        """
+        return []
+
     async def health_check(self) -> dict:
         """Return provider health status.
 

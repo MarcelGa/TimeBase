@@ -20,6 +20,9 @@ service DataProvider {
 
   // Health check for provider status monitoring
   rpc HealthCheck(google.protobuf.Empty) returns (HealthStatus);
+
+  // Get the list of symbols supported by this provider
+  rpc GetSymbols(google.protobuf.Empty) returns (SymbolList);
 }
 
 // Core time series data structure - OHLCV with optional metadata
@@ -112,4 +115,18 @@ message HealthStatus {
 
   // Optional: Additional health metrics
   map<string, string> metrics = 4;
+}
+
+// Symbol information for provider-supported instruments
+message SymbolInfo {
+  string symbol = 1;          // Ticker (e.g., "AAPL", "BINANCE:BTCUSDT")
+  string name = 2;            // Human-readable name (e.g., "Apple Inc.")
+  string type = 3;            // Asset type (e.g., "stock", "crypto", "forex")
+  repeated string intervals = 4;  // Supported intervals for this symbol
+  map<string, string> metadata = 5; // Provider-specific metadata
+}
+
+// List of symbols supported by a provider
+message SymbolList {
+  repeated SymbolInfo symbols = 1;
 }
