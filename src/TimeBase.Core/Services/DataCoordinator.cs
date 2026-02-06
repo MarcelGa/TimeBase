@@ -180,23 +180,20 @@ public class DataCoordinator(
     /// </summary>
     public async Task<DataSummary?> GetDataSummaryAsync(string symbol)
     {
-        var data = await db.TimeSeries
+        var summary = await db.TimeSeries
             .Where(d => d.Symbol == symbol)
-            .ToListAsync();
+            .GroupBy(d => d.Symbol)
+            .Select(g => new DataSummary(
+                g.Key,
+                g.Count(),
+                g.Min(d => d.Time),
+                g.Max(d => d.Time),
+                g.Select(d => d.ProviderId).Distinct().Count(),
+                g.Select(d => d.Interval).Distinct().ToList()
+            ))
+            .FirstOrDefaultAsync();
 
-        if (!data.Any())
-        {
-            return null;
-        }
-
-        return new DataSummary(
-            Symbol: symbol,
-            TotalDataPoints: data.Count,
-            EarliestDate: data.Min(d => d.Time),
-            LatestDate: data.Max(d => d.Time),
-            Providers: data.Select(d => d.ProviderId).Distinct().Count(),
-            Intervals: data.Select(d => d.Interval).Distinct().ToList()
-        );
+        return summary;
     }
 }
 
