@@ -136,14 +136,13 @@ public class RealTimeStreamingService : BackgroundService
         // Get providers that support real-time streaming
         using var scope = _serviceProvider.CreateScope();
         var registry = scope.ServiceProvider.GetRequiredService<IProviderRegistry>();
-        var providerClient = scope.ServiceProvider.GetRequiredService<IProviderClient>();
         var providers = await registry.GetAllProvidersAsync(enabled: true);
 
         // Find providers that support real-time streaming by checking their capabilities
         var realtimeProviders = new List<Provider>();
         foreach (var provider in providers)
         {
-            var capabilities = await providerClient.GetCapabilitiesAsync(provider);
+            var capabilities = registry.GetCachedCapabilities(provider);
             if (capabilities?.SupportsRealtime == true)
             {
                 realtimeProviders.Add(provider);
