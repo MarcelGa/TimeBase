@@ -125,15 +125,10 @@ public class DataCoordinator(
             return new List<Provider>();
         }
 
-        var providers = new List<Provider>();
-        foreach (var id in providerIds)
-        {
-            var provider = await providerRegistry.GetProviderByIdAsync(id);
-            if (provider != null && provider.Enabled)
-            {
-                providers.Add(provider);
-            }
-        }
+        var providers = await db.Providers
+            .Where(p => providerIds.Contains(p.Id) && p.Enabled)
+            .OrderBy(p => p.CreatedAt)
+            .ToListAsync();
 
         logger.LogInformation("Found {Count} providers for {Symbol}", providers.Count, symbol);
         return providers;
