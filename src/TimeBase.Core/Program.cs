@@ -10,6 +10,7 @@ using Serilog;
 
 using TimeBase.Core;
 using TimeBase.Core.Endpoints;
+using TimeBase.Core.Filters;
 using TimeBase.Core.Health;
 using TimeBase.Core.Hubs;
 using TimeBase.Core.Infrastructure;
