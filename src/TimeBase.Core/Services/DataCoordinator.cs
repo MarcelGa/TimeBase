@@ -15,7 +15,7 @@ public class DataCoordinator(
     IProviderRegistry providerRegistry,
     IProviderClient providerClient,
     ILogger<DataCoordinator> logger,
-    ITimeBaseMetrics metrics)
+    ITimeBaseMetrics metrics) : IDataCoordinator
 {
     /// <summary>
     /// Get historical time series data for a symbol.

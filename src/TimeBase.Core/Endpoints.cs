@@ -177,7 +177,7 @@ public static class EndpointsExtensions
         // Get historical data
         builder.MapGet("/data/{symbol}", async (
             [AsParameters] GetHistoricalDataRequest request,
-            DataCoordinator coordinator) =>
+            IDataCoordinator coordinator) =>
         {
             // Default interval if not provided
             var interval = request.Interval ?? "1d";
@@ -219,7 +219,7 @@ public static class EndpointsExtensions
         .Produces(500);
 
         // Get data summary for a symbol
-        builder.MapGet("/data/{symbol}/summary", async (string symbol, DataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/summary", async (string symbol, IDataCoordinator coordinator) =>
         {
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
@@ -233,7 +233,7 @@ public static class EndpointsExtensions
         .Produces<ErrorResponse>(404);
 
         // Get available providers for a symbol
-        builder.MapGet("/data/{symbol}/providers", async (string symbol, DataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/providers", async (string symbol, IDataCoordinator coordinator) =>
         {
             var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
             return Results.Ok(new GetProvidersForSymbolResponse(

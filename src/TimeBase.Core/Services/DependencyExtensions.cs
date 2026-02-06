@@ -10,6 +10,6 @@ public static class DependencyExtensions
             .AddSingleton<RealTimeStreamingService>()  // Singleton for managing subscriptions
             .AddHostedService(sp => sp.GetRequiredService<RealTimeStreamingService>())  // Register as hosted service
             .AddScoped<IProviderRegistry, ProviderRegistry>()
-            .AddScoped<DataCoordinator>()
+            .AddScoped<IDataCoordinator, DataCoordinator>()
             .AddHostedService<ProviderHealthMonitor>();  // Background service for health monitoring
 }
