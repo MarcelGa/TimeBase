@@ -1,4 +1,5 @@
 using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Models;
 
 namespace TimeBase.Core.Services;
 

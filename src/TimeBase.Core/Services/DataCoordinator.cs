@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Models;
 
 namespace TimeBase.Core.Services;
 
@@ -190,15 +191,3 @@ public class DataCoordinator(
         return summary;
     }
 }
-
-/// <summary>
-/// Summary information about available data for a symbol.
-/// </summary>
-public record DataSummary(
-    string Symbol,
-    int TotalDataPoints,
-    DateTime EarliestDate,
-    DateTime LatestDate,
-    int Providers,
-    List<string> Intervals
-);
