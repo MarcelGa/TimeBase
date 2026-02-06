@@ -56,9 +56,6 @@ builder.Services.AddSignalR(options =>
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
 });
 
-// Add MarketBroadcaster service
-builder.Services.AddSingleton<IMarketBroadcaster, MarketBroadcaster>();
-
 // Add OpenTelemetry
 var otelConfig = builder.Configuration.GetSection("OpenTelemetry");
 var serviceName = otelConfig["ServiceName"] ?? "TimeBase.Core";
