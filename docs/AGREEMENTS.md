@@ -378,30 +378,63 @@ See [OBSERVABILITY.md](OBSERVABILITY.md) for detailed setup and usage instructio
 
 ### 18. Project Structure & Layering
 
-#### Clean Architecture with Separated Concerns
+#### Clean Architecture with Vertical Slice Organization
 
-**Decision**: Organize the .NET solution into separate projects following Clean Architecture principles.
+**Decision**: Organize the .NET solution into separate projects following Clean Architecture principles, with the Core project organized by feature (vertical slices) rather than technical concerns.
 
 **Rationale**:
 - **Separation of Concerns**: Clear boundaries between web/API, business logic, and data access
 - **Testability**: Each layer can be tested independently
 - **Maintainability**: Changes in one layer don't ripple through the entire system
 - **Dependency Direction**: Dependencies flow inward (Core → Infrastructure, not the other way)
+- **Feature Cohesion**: Related code is grouped by business capability, not technical layer
 
 **Project Structure**:
 
 ```
 src/
-├── TimeBase.Core/                          # Web API & Application Layer
-│   ├── Services/                           # Business logic services
-│   │   ├── ProviderRegistry.cs            # Provider management
-│   │   ├── DataCoordinator.cs             # Data queries and coordination
-│   │   ├── TimeBaseMetrics.cs             # Custom business metrics
-│   │   └── DependencyExtensions.cs        # Service registration
-│   ├── Health/                             # Health check configuration
-│   │   ├── DependencyExtensions.cs        # Health check registration
-│   │   └── Endpoints.cs                    # Health check endpoint mappings
-│   ├── Endpoints.cs                        # REST API endpoints (fluent API pattern)
+├── Directory.Build.props                    # Shared MSBuild properties
+├── Directory.Packages.props                 # Central NuGet package version management
+├── TimeBase.Core/                           # Web API & Application Layer (organized by features)
+│   ├── Providers/                          # Provider management feature
+│   │   ├── DependencyExtensions.cs        # AddProviders(), MapProviders()
+│   │   ├── Endpoints.cs                    # Provider API endpoints
+│   │   ├── Models/
+│   │   │   ├── InstallProviderRequest.cs  # Request models
+│   │   │   ├── SetProviderEnabledRequest.cs
+│   │   │   └── Responses.cs                # Provider-specific responses
+│   │   └── Services/
+│   │       ├── IProviderRegistry.cs, ProviderRegistry.cs
+│   │       ├── IProviderClient.cs, ProviderClient.cs
+│   │       └── ProviderHealthMonitor.cs
+│   │
+│   ├── Data/                               # Data query & streaming feature
+│   │   ├── DependencyExtensions.cs        # AddData(), MapData()
+│   │   ├── Endpoints.cs                    # Data API endpoints
+│   │   ├── Hubs/
+│   │   │   └── MarketHub.cs                # SignalR hub for real-time data
+│   │   ├── Models/
+│   │   │   ├── GetHistoricalDataRequest.cs
+│   │   │   ├── DataSummary.cs
+│   │   │   └── Responses.cs                # Data-specific responses
+│   │   └── Services/
+│   │       ├── IDataCoordinator.cs, DataCoordinator.cs
+│   │       ├── IMarketBroadcaster.cs, MarketBroadcaster.cs
+│   │       └── RealTimeStreamingService.cs
+│   │
+│   ├── Shared/                             # Cross-cutting concerns
+│   │   ├── DependencyExtensions.cs        # AddShared()
+│   │   ├── Filters/
+│   │   │   └── GlobalValidationFilter.cs
+│   │   ├── Models/
+│   │   │   └── ErrorResponse.cs            # Truly shared response models
+│   │   └── Services/
+│   │       └── ITimeBaseMetrics.cs, TimeBaseMetrics.cs
+│   │
+│   ├── Health/                             # Health check feature
+│   │   ├── DependencyExtensions.cs        # AddHealthChecks()
+│   │   └── Endpoints.cs                    # Health check endpoints
+│   │
 │   ├── Program.cs                          # Application entry point
 │   └── appsettings.json                    # Configuration
 │
@@ -416,32 +449,34 @@ src/
 │   ├── Migrations/                         # EF Core migrations
 │   └── DependencyExtensions.cs             # Infrastructure setup and configuration
 │
-└── TimeBase.Plugins.Contracts/              # gRPC Protocol Definitions (referenced only by providers)
+└── TimeBase.Plugins.Contracts/             # gRPC Protocol Definitions (referenced only by providers)
     └── protos/                             # .proto files
 ```
 
 **Layering Rules**:
 
 1. **TimeBase.Core** (Application/API Layer)
-   - Contains: Controllers, endpoints, services, DTOs, health checks
-   - References: TimeBase.Core.Infrastructure, TimeBase.Plugins.Contracts
-   - Responsibilities: HTTP handling, business logic orchestration
-   - No direct database code
-   - Uses fluent API pattern for endpoint registration
+   - **Organization**: Vertical slices by feature (Providers/, Data/, Shared/, Health/)
+   - **Feature Structure**: Each feature contains DependencyExtensions, Endpoints, Models, Services
+   - **References**: TimeBase.Core.Infrastructure, TimeBase.Plugins.Contracts
+   - **Responsibilities**: HTTP handling, business logic orchestration, feature registration
+   - **No direct database code**: Uses DbContext via dependency injection from Infrastructure
+   - **Self-Registration**: Feature modules expose `AddFeature()` and `MapFeature()` methods
+   - **Fluent API**: Endpoint registration returns `IEndpointRouteBuilder` for chaining
 
 2. **TimeBase.Core.Infrastructure** (Data Access Layer)
-   - Contains: DbContext, entities, migrations, repositories, infrastructure configuration
-   - References: None (except EF Core packages)
-   - Responsibilities: Database operations, data persistence, infrastructure setup
-   - Exposes entities and DbContext to Core
-   - Provides extension methods for service registration
+   - **Contains**: DbContext, entities, migrations, infrastructure configuration
+   - **References**: None (except EF Core packages)
+   - **Responsibilities**: Database operations, data persistence, infrastructure setup
+   - **Exposes**: Entities and DbContext to Core layer
+   - **Registration**: Provides `AddInfrastructure()` and `UseInfrastructure()` extension methods
 
 3. **TimeBase.Plugins.Contracts** (Shared Protocols)
-   - Contains: gRPC protocol definitions (.proto files)
-   - References: None
-   - Responsibilities: API contracts between Core and data providers
-   - Language-agnostic definitions
-   - Referenced only by provider implementations
+   - **Contains**: gRPC protocol definitions (.proto files)
+   - **References**: None
+   - **Responsibilities**: API contracts between Core and data providers
+   - **Language-agnostic**: Definitions work across .NET and Python
+   - **Usage**: Referenced only by provider implementations (not by Core directly for business logic)
 
 **Migration History**:
 - **2026-01-23**: Extracted data layer into `TimeBase.Core.Infrastructure` project
@@ -458,30 +493,55 @@ src/
   - Simplified `Program.cs` by extracting configuration to extension methods
   - Implemented fluent API pattern for endpoint registration
   - Changed to async methods throughout (`RunAsync`, `CloseAndFlushAsync`)
+- **2026-02-06**: Reorganized Core project using vertical slice architecture
+  - Split by feature (Providers/, Data/, Shared/) instead of technical concerns (Services/, Models/)
+  - Moved provider management code to `Providers/` feature folder
+  - Moved data query/streaming code to `Data/` feature folder
+  - Created feature-specific Models/ and Services/ subfolders within each feature
+  - Moved API responses to feature-specific Responses.cs files (ProviderResponse, DataResponse)
+  - Maintained Shared/ for truly cross-cutting concerns (GlobalValidationFilter, TimeBaseMetrics, ErrorResponse)
+- **2026-02-06**: Implemented feature module pattern with self-registration
+  - Each feature has `DependencyExtensions.cs` with `AddFeature()` and `MapFeature()` methods
+  - Self-contained feature registration (services + endpoints + hubs)
+  - Created `Providers/DependencyExtensions.cs` with `AddProviders()` and `MapProviders()`
+  - Created `Data/DependencyExtensions.cs` with `AddData()` and `MapData()`
+  - Created `Shared/DependencyExtensions.cs` with `AddShared()`
+  - Deleted old monolithic `Shared/Services/DependencyExtensions.cs`
+  - Updated `Program.cs` to use feature module registration
+- **2026-02-06**: Added central package management
+  - Created `src/Directory.Packages.props` for centralized NuGet version management
+  - Removed `Version` attributes from all `.csproj` PackageReference elements
+  - Enabled `ManagePackageVersionsCentrally` property in all projects
+  - Consolidated OpenTelemetry packages to consistent versions (1.10.0-beta.1)
+  - Single source of truth for package versions across the solution
 
 **Namespace Conventions**:
 - Core entities: `TimeBase.Core.Infrastructure.Entities`
 - Core data access: `TimeBase.Core.Infrastructure.Data`
 - Infrastructure configuration: `TimeBase.Core.Infrastructure`
-- Business services: `TimeBase.Core.Services`
+- Features: `TimeBase.Core.{Feature}.*` (e.g., `TimeBase.Core.Providers.Services`)
+- Feature models: `TimeBase.Core.{Feature}.Models.*`
+- Feature services: `TimeBase.Core.{Feature}.Services.*`
+- Shared cross-cutting: `TimeBase.Core.Shared.*`
 - Health checks: `TimeBase.Core.Health`
-- API endpoints: `TimeBase.Core`
 - gRPC contracts: `TimeBase.Plugins.Contracts`
 
-**Code Organization Patterns** (Established 2026-01-23):
-- **Extension Methods**: Use extension methods for feature registration
-  - `AddHealthChecks()` - Register health check services
-  - `AddInfrastructure()` - Configure infrastructure services
-  - `UseInfrastructure()` - Apply infrastructure configuration (migrations, etc.)
-  - `AddTimeBaseEndpoints()` - Register API endpoints
-  - `AddHealthCheckEndpoints()` - Register health check endpoints
+**Code Organization Patterns** (Established 2026-01-23, Updated 2026-02-06):
+- **Feature Modules**: Each feature has its own `DependencyExtensions.cs` with self-registration methods
+  - `AddProviders()` + `MapProviders()` - Provider management feature
+  - `AddData()` + `MapData()` - Data query and streaming feature
+  - `AddShared()` - Shared cross-cutting services (metrics, validation)
+  - `AddHealthChecks()` - Health check services
+  - `AddInfrastructure()` + `UseInfrastructure()` - Infrastructure configuration
+- **Vertical Slices**: Code organized by business capability, not technical layer
+  - Providers/ - All provider management code (models, services, endpoints)
+  - Data/ - All data query and streaming code (models, services, endpoints, hubs)
+  - Shared/ - Only truly shared cross-cutting code (filters, metrics, error responses)
+  - Health/ - Health check endpoints and configuration
 - **Fluent API**: Endpoint registration returns `IEndpointRouteBuilder` for chaining
-- **Separation by Feature**: Group related functionality in dedicated namespaces
-  - Health checks in `TimeBase.Core.Health`
-  - Business services in `TimeBase.Core.Services`
-  - Infrastructure in `TimeBase.Core.Infrastructure`
+- **Central Package Management**: `Directory.Packages.props` for all NuGet versions (single source of truth)
 - **Async by Default**: Use async methods throughout (`RunAsync`, `CloseAndFlushAsync`)
-- **Clean Program.cs**: Keep application entry point minimal and declarative
+- **Clean Program.cs**: Minimal entry point using feature module registration pattern
 
 **Future Considerations**:
 - Repository pattern may be added if query logic becomes complex

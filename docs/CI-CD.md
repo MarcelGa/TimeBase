@@ -82,17 +82,29 @@ dotnet test --configuration Release
 
 ```
 src/
-└── TimeBase.Core.Tests/
-    ├── Services/
-    │   └── ProviderRegistryTests.cs      # 10 tests
-    ├── Models/
-    │   └── ValidatorTests.cs              # 37 tests
-    └── TimeBase.Core.Tests.csproj
+├── TimeBase.Core.Tests.Unit/
+│   ├── Providers/
+│   │   └── Services/
+│   │       └── ProviderRegistryTests.cs      # Unit tests for ProviderRegistry
+│   ├── Data/
+│   │   └── Services/
+│   │       └── DataCoordinatorTests.cs       # Unit tests for DataCoordinator
+│   ├── Shared/
+│   │   └── Validators/
+│   │       └── ValidatorTests.cs              # Request validator tests
+│   └── TimeBase.Core.Tests.Unit.csproj
+│
+└── TimeBase.Core.Tests.Integration/
+    ├── Providers/
+    │   └── ProviderEndpointsTests.cs         # Integration tests for provider endpoints
+    ├── Data/
+    │   └── DataEndpointsTests.cs             # Integration tests for data endpoints
+    └── TimeBase.Core.Tests.Integration.csproj
 ```
 
-**Total: 47 tests**
-- ProviderRegistry service tests (10)
-- Request validator tests (37)
+**Total: 72 tests** (48 unit + 24 integration)
+- **Unit Tests** (48): ProviderRegistry, DataCoordinator, validators (no Docker required)
+- **Integration Tests** (24): End-to-end endpoint tests (requires Docker/Testcontainers)
 
 ## Code Quality Checks
 
