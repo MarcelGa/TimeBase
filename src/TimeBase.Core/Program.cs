@@ -14,8 +14,8 @@ using TimeBase.Core.Data.Hubs;
 using TimeBase.Core.Health;
 using TimeBase.Core.Infrastructure;
 using TimeBase.Core.Providers;
+using TimeBase.Core.Shared;
 using TimeBase.Core.Shared.Filters;
-using TimeBase.Core.Shared.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,7 +116,11 @@ builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection(
 builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-builder.Services.AddServices();
+// Add feature modules
+builder.Services.AddShared();      // Shared cross-cutting services (metrics)
+builder.Services.AddProviders();   // Provider management feature
+builder.Services.AddData();        // Data query and streaming feature
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -161,15 +165,12 @@ app.Services.UseInfrastructure();
 var api = app.MapGroup("/api")
     .AddEndpointFilter<GlobalValidationFilter>();
 
-// Add endpoints (validation is applied automatically via the route group filter)
+// Map feature endpoints
 app
     .AddHealthCheckEndpoints()
-    .AddProviderEndpoints(api)  // Provider management endpoints
-    .AddDataEndpoints(api)      // Data query endpoints
+    .MapProviders(api)       // Provider endpoints
+    .MapData(api)            // Data endpoints
     .MapPrometheusScrapingEndpoint();
-
-// Map SignalR hub
-app.MapHub<MarketHub>("/hubs/market");
 
 if (app.Environment.IsDevelopment())
 {
