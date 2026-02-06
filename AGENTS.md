@@ -201,6 +201,7 @@ public class ExampleService(
 - Business logic services (ProviderRegistry, DataCoordinator)
 - FluentValidation for request validation
 - No direct database code
+- Organized by feature folders (vertical slices)
 
 **TimeBase.Core.Infrastructure** (Data Access Layer)
 - EF Core DbContext and entities
@@ -211,17 +212,65 @@ public class ExampleService(
 - gRPC protocol definitions (.proto files)
 - Referenced only by provider implementations
 
+### Feature Folder Structure (Vertical Slices)
+
+TimeBase.Core is organized by feature, not by technical concern:
+
+```
+TimeBase.Core/
+├── Providers/              # Provider management feature
+│   ├── DependencyExtensions.cs    # AddProviders(), MapProviders()
+│   ├── Endpoints.cs
+│   ├── Models/
+│   │   ├── Requests (InstallProviderRequest, etc.)
+│   │   └── Responses.cs (provider-specific responses)
+│   └── Services/
+│       ├── IProviderRegistry.cs, ProviderRegistry.cs
+│       ├── IProviderClient.cs, ProviderClient.cs
+│       └── ProviderHealthMonitor.cs
+│
+├── Data/                   # Data query & streaming feature
+│   ├── DependencyExtensions.cs    # AddData(), MapData()
+│   ├── Endpoints.cs
+│   ├── Hubs/
+│   │   └── MarketHub.cs
+│   ├── Models/
+│   │   ├── Requests (GetHistoricalDataRequest, etc.)
+│   │   └── Responses.cs (data-specific responses)
+│   └── Services/
+│       ├── IDataCoordinator.cs, DataCoordinator.cs
+│       ├── IMarketBroadcaster.cs, MarketBroadcaster.cs
+│       └── RealTimeStreamingService.cs
+│
+├── Shared/                 # Cross-cutting concerns
+│   ├── DependencyExtensions.cs    # AddShared()
+│   ├── Filters/
+│   │   └── GlobalValidationFilter.cs
+│   ├── Models/
+│   │   └── ErrorResponse.cs (truly shared responses)
+│   └── Services/
+│       ├── ITimeBaseMetrics.cs, TimeBaseMetrics.cs
+│
+├── Health/
+│   ├── DependencyExtensions.cs    # AddHealthChecks()
+│   └── Endpoints.cs
+│
+└── Program.cs
+```
+
 ### Code Organization Patterns
-- **Extension Methods**: Use for feature registration (`AddHealthChecks()`, `AddInfrastructure()`, `UseInfrastructure()`)
+- **Feature Modules**: Each feature has its own `DependencyExtensions.cs` with `AddFeature()` and `MapFeature()` methods
+- **Extension Methods**: Use for feature registration (`AddProviders()`, `AddData()`, `AddShared()`)
 - **Fluent API**: Endpoint registration returns `IEndpointRouteBuilder` for chaining
 - **Async by Default**: Use async methods throughout (`RunAsync`, `CloseAndFlushAsync`)
 - **Clean Program.cs**: Keep entry point minimal and declarative
 
 ### Namespace Conventions
+- Features: `TimeBase.Core.{Feature}.*` (e.g., `TimeBase.Core.Providers.Services`)
+- Feature models: `TimeBase.Core.{Feature}.Models.*`
+- Shared: `TimeBase.Core.Shared.*`
 - Infrastructure: `TimeBase.Core.Infrastructure.*`
-- Business services: `TimeBase.Core.Services`
 - Health checks: `TimeBase.Core.Health`
-- API endpoints: `TimeBase.Core`
 - gRPC contracts: `TimeBase.Plugins.Contracts`
 
 ## Testing Standards
@@ -234,14 +283,49 @@ public class ExampleService(
 
 **For complete testing information, see [docs/CI-CD.md](docs/CI-CD.md)**
 
+## Package Management
+
+TimeBase uses **Central Package Management** (Directory.Packages.props) for consistent NuGet package versions across all projects.
+
+### Adding a New Package
+1. Add version to `src/Directory.Packages.props`:
+   ```xml
+   <PackageVersion Include="PackageName" Version="1.0.0" />
+   ```
+2. Reference in project without version:
+   ```xml
+   <PackageReference Include="PackageName" />
+   ```
+
+### Updating Package Versions
+- Update version in `src/Directory.Packages.props` only
+- All projects using the package will automatically use the new version
+- Run `dotnet restore` to apply changes
+
+### Benefits
+- Single source of truth for package versions
+- Prevents version conflicts between projects
+- Easier bulk updates across the solution
+
 ## Common Tasks
 
 ### Adding a New Endpoint
-1. Define request/response models in `TimeBase.Core/Models/`
-2. Add FluentValidation validators
-3. Implement endpoint in `Endpoints.cs`
-4. Add unit tests for validators
-5. Add integration tests for the endpoint
+1. Choose the appropriate feature folder (`Providers/`, `Data/`, etc.)
+2. Define request/response models in `{Feature}/Models/`
+3. Add FluentValidation validators
+4. Implement endpoint in `{Feature}/Endpoints.cs`
+5. Add unit tests for validators
+6. Add integration tests for the endpoint
+
+### Adding a New Feature Module
+1. Create feature folder in `TimeBase.Core/{FeatureName}/`
+2. Add `DependencyExtensions.cs` with `AddFeature()` and `MapFeature()` methods
+3. Create `Endpoints.cs`, `Models/`, `Services/` subfolders as needed
+4. Register in `Program.cs`:
+   ```csharp
+   builder.Services.AddFeature();
+   app.MapFeature(api);
+   ```
 
 ### Database Changes
 1. Modify entities in `TimeBase.Core.Infrastructure/Entities/`
@@ -250,10 +334,11 @@ public class ExampleService(
 4. Apply migration: `dotnet ef database update --project TimeBase.Core.Infrastructure --startup-project TimeBase.Core`
 
 ### Adding a New Service
-1. Create interface in `TimeBase.Core/Services/I{ServiceName}.cs`
-2. Implement in `TimeBase.Core/Services/{ServiceName}.cs`
-3. Register in `DependencyExtensions.cs`
-4. Add unit tests in `TimeBase.Core.Tests.Unit/Services/`
+1. Choose the appropriate feature folder
+2. Create interface in `{Feature}/Services/I{ServiceName}.cs`
+3. Implement in `{Feature}/Services/{ServiceName}.cs`
+4. Register in `{Feature}/DependencyExtensions.cs` inside `AddFeature()` method
+5. Add unit tests in `TimeBase.Core.Tests.Unit/{Feature}/Services/`
 
 ## Important Notes
 
