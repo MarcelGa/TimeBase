@@ -40,6 +40,30 @@ class CcxtProvider(TimeBaseProvider):
             "max_lookback_days": 3650
         }
 
+    async def get_symbols(self) -> list[dict]:
+        """Return symbols supported by the default exchange (Binance)."""
+        exchange = await self._get_exchange("binance")
+        symbols = []
+
+        for market in exchange.markets.values():
+            market_symbol = market.get("id") or market.get("symbol")
+            if not market_symbol:
+                continue
+
+            symbols.append({
+                "symbol": f"BINANCE:{market_symbol}",
+                "name": market.get("base") or market.get("symbol") or market_symbol,
+                "type": "crypto",
+                "intervals": self.config.intervals,
+                "metadata": {
+                    "exchange": "binance",
+                    "base": str(market.get("base") or ""),
+                    "quote": str(market.get("quote") or "")
+                }
+            })
+
+        return symbols
+
     async def get_historical_data(
         self,
         symbol: str,

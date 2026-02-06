@@ -48,6 +48,123 @@ class YahooFinanceProvider(TimeBaseProvider):
             "max_lookback_days": 3650
         }
 
+    async def get_symbols(self) -> list[dict]:
+        """Return a curated list of popular symbols for Yahoo Finance."""
+        intervals = [
+            "1m", "2m", "5m", "15m", "30m", "60m", "90m",
+            "1h", "1d", "5d", "1wk", "1mo", "3mo"
+        ]
+
+        symbols = [
+            {
+                "symbol": "AAPL",
+                "name": "Apple Inc.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "MSFT",
+                "name": "Microsoft Corp.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "GOOGL",
+                "name": "Alphabet Inc. Class A",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "AMZN",
+                "name": "Amazon.com Inc.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "NVDA",
+                "name": "NVIDIA Corp.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "META",
+                "name": "Meta Platforms Inc.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "TSLA",
+                "name": "Tesla Inc.",
+                "type": "stock",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "^GSPC",
+                "name": "S&P 500",
+                "type": "index",
+                "intervals": intervals,
+                "metadata": {"exchange": "INDEX"}
+            },
+            {
+                "symbol": "^DJI",
+                "name": "Dow Jones Industrial Average",
+                "type": "index",
+                "intervals": intervals,
+                "metadata": {"exchange": "INDEX"}
+            },
+            {
+                "symbol": "^IXIC",
+                "name": "NASDAQ Composite",
+                "type": "index",
+                "intervals": intervals,
+                "metadata": {"exchange": "INDEX"}
+            },
+            {
+                "symbol": "SPY",
+                "name": "SPDR S&P 500 ETF",
+                "type": "etf",
+                "intervals": intervals,
+                "metadata": {"exchange": "NYSEARCA"}
+            },
+            {
+                "symbol": "QQQ",
+                "name": "Invesco QQQ Trust",
+                "type": "etf",
+                "intervals": intervals,
+                "metadata": {"exchange": "NASDAQ"}
+            },
+            {
+                "symbol": "VTI",
+                "name": "Vanguard Total Stock Market ETF",
+                "type": "etf",
+                "intervals": intervals,
+                "metadata": {"exchange": "NYSEARCA"}
+            },
+            {
+                "symbol": "BTC-USD",
+                "name": "Bitcoin USD",
+                "type": "crypto",
+                "intervals": intervals,
+                "metadata": {"exchange": "CRYPTO"}
+            },
+            {
+                "symbol": "ETH-USD",
+                "name": "Ethereum USD",
+                "type": "crypto",
+                "intervals": intervals,
+                "metadata": {"exchange": "CRYPTO"}
+            }
+        ]
+
+        return symbols
+
     async def get_historical_data(
         self,
         symbol: str,

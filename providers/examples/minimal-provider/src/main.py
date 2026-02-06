@@ -33,13 +33,32 @@ class MinimalProvider(TimeBaseProvider):
             "max_lookback_days": 3650  # 10 years
         }
 
+    async def get_symbols(self) -> list[dict]:
+        """Return a minimal symbol list for testing."""
+        return [
+            {
+                "symbol": "DEMO-1",
+                "name": "Demo Symbol 1",
+                "type": "stock",
+                "intervals": self.config.intervals,
+                "metadata": {"generated": True}
+            },
+            {
+                "symbol": "DEMO-2",
+                "name": "Demo Symbol 2",
+                "type": "stock",
+                "intervals": self.config.intervals,
+                "metadata": {"generated": True}
+            }
+        ]
+
     async def get_historical_data(
         self,
         symbol: str,
         interval: str,
         start_time: datetime,
         end_time: datetime,
-        limit: int = None
+        limit: int | None = None
     ):
         """Generate dummy OHLCV data for testing.
 
