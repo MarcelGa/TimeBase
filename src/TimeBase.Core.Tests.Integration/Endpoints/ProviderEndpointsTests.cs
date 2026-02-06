@@ -119,4 +119,16 @@ public class ProviderEndpointsTests : IClassFixture<TimeBaseWebApplicationFactor
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task GetProviderSymbols_ShouldReturnEmptyList_WhenNoProvidersExist()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/providers/symbols");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("providers");
+    }
 }

@@ -197,6 +197,62 @@ public class ProviderRegistryTests : IDisposable
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task GetAllSymbolsAsync_WhenProvidersExist_ReturnsSymbolsBySlug()
+    {
+        // Arrange
+        var provider = CreateTestProvider("provider-1", "Provider 1");
+        _context.Providers.Add(provider);
+        await _context.SaveChangesAsync();
+
+        var symbols = new List<ProviderSymbol>
+        {
+            new(
+                Symbol: "AAPL",
+                Name: "Apple Inc.",
+                Type: "stock",
+                Intervals: ["1d"],
+                Metadata: new Dictionary<string, string> { { "exchange", "NASDAQ" } })
+        };
+
+        _providerClientMock
+            .Setup(client => client.GetSymbolsAsync(provider))
+            .ReturnsAsync(symbols);
+
+        // Act
+        var result = await _sut.GetAllSymbolsAsync();
+
+        // Assert
+        result.Should().ContainKey("provider-1");
+        result["provider-1"].Should().HaveCount(1);
+        result["provider-1"][0].Symbol.Should().Be("AAPL");
+    }
+
+    [Fact]
+    public async Task GetAllSymbolsAsync_WhenFilteredBySlug_ReturnsOnlyMatchingProvider()
+    {
+        // Arrange
+        var provider1 = CreateTestProvider("provider-1", "Provider 1");
+        var provider2 = CreateTestProvider("provider-2", "Provider 2");
+        _context.Providers.AddRange(provider1, provider2);
+        await _context.SaveChangesAsync();
+
+        _providerClientMock
+            .Setup(client => client.GetSymbolsAsync(provider1))
+            .ReturnsAsync(new List<ProviderSymbol> { new("AAPL", "Apple Inc.", "stock", ["1d"], null) });
+
+        _providerClientMock
+            .Setup(client => client.GetSymbolsAsync(provider2))
+            .ReturnsAsync(new List<ProviderSymbol> { new("MSFT", "Microsoft Corp.", "stock", ["1d"], null) });
+
+        // Act
+        var result = await _sut.GetAllSymbolsAsync("provider-2");
+
+        // Assert
+        result.Should().ContainKey("provider-2");
+        result.Should().NotContainKey("provider-1");
+    }
+
     private static Provider CreateTestProvider(
         string slug,
         string name,
