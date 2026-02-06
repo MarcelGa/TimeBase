@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
@@ -44,7 +45,7 @@ public class ProviderClient(
             "Fetching historical data for {Symbol} from provider {Provider} ({Endpoint})",
             symbol, provider.Slug, provider.GrpcEndpoint);
 
-        var startTime = DateTime.UtcNow;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
@@ -80,8 +81,7 @@ public class ProviderClient(
                 ));
             }
 
-            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, result.Count, duration, success: true);
+            metrics.RecordDataQuery(symbol, interval, result.Count, stopwatch.Elapsed.TotalMilliseconds, success: true);
 
             logger.LogInformation(
                 "Fetched {Count} data points for {Symbol} from provider {Provider}",
@@ -91,8 +91,7 @@ public class ProviderClient(
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
         {
-            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
+            metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
             logger.LogError(ex,
                 "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
@@ -100,8 +99,7 @@ public class ProviderClient(
         }
         catch (Exception ex)
         {
-            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
+            metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("provider_grpc_call", ex.GetType().Name);
             logger.LogError(ex,
                 "Failed to fetch data from provider {Provider}",

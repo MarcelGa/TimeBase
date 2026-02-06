@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +34,7 @@ public class DataCoordinator(
             "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End} from provider {ProviderId}",
             symbol, interval, start, end, providerId);
 
-        var startTime = DateTime.UtcNow;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             // 1. Validate provider exists and is enabled
@@ -60,8 +62,7 @@ public class DataCoordinator(
             // 3. If data exists in database, return it
             if (data.Count > 0)
             {
-                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-                metrics.RecordDataQuery(symbol, interval, data.Count, duration, success: true);
+                metrics.RecordDataQuery(symbol, interval, data.Count, stopwatch.Elapsed.TotalMilliseconds, success: true);
                 logger.LogInformation("Fetched {Count} data points for {Symbol} from database (provider: {Provider})",
                     data.Count, symbol, provider.Slug);
                 return data;
@@ -86,8 +87,7 @@ public class DataCoordinator(
             // 5. Store fetched data in database for future queries
             await StoreTimeSeriesDataAsync(providerData);
 
-            var totalDuration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, providerData.Count, totalDuration, success: true);
+            metrics.RecordDataQuery(symbol, interval, providerData.Count, stopwatch.Elapsed.TotalMilliseconds, success: true);
 
             logger.LogInformation(
                 "Fetched and stored {Count} data points for {Symbol} from provider {Provider}",
@@ -97,8 +97,7 @@ public class DataCoordinator(
         }
         catch (Exception ex)
         {
-            var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            metrics.RecordDataQuery(symbol, interval, 0, duration, success: false);
+            metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("data_query", ex.GetType().Name);
             logger.LogError(ex, "Failed to fetch data for {Symbol} from provider {ProviderId}", symbol, providerId);
             throw;
