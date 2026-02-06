@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-using TimeBase.Core.Services;
+using TimeBase.Core.Data.Services;
 
-namespace TimeBase.Core.Hubs;
+namespace TimeBase.Core.Data.Hubs;
 
 /// <summary>
 /// SignalR hub for real-time market data updates.

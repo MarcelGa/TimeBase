@@ -9,12 +9,13 @@ using OpenTelemetry.Trace;
 using Serilog;
 
 using TimeBase.Core;
-using TimeBase.Core.Endpoints;
-using TimeBase.Core.Filters;
+using TimeBase.Core.Data;
+using TimeBase.Core.Data.Hubs;
 using TimeBase.Core.Health;
-using TimeBase.Core.Hubs;
 using TimeBase.Core.Infrastructure;
-using TimeBase.Core.Services;
+using TimeBase.Core.Providers;
+using TimeBase.Core.Shared.Filters;
+using TimeBase.Core.Shared.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

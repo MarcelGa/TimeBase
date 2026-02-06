@@ -1,6 +1,6 @@
 using TimeBase.Core.Infrastructure.Entities;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Data.Services;
 
 /// <summary>
 /// Service for broadcasting real-time market data updates to connected clients.

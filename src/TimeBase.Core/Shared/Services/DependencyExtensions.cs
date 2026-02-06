@@ -1,4 +1,7 @@
-namespace TimeBase.Core.Services;
+using TimeBase.Core.Data.Services;
+using TimeBase.Core.Providers.Services;
+
+namespace TimeBase.Core.Shared.Services;
 
 public static class DependencyExtensions
 {

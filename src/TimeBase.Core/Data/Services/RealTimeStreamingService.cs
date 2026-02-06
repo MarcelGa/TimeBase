@@ -5,8 +5,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Providers.Services;
+using TimeBase.Core.Shared.Services;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Data.Services;
 
 /// <summary>
 /// Background service that manages real-time data streaming from providers.

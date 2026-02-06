@@ -1,12 +1,13 @@
-namespace TimeBase.Core.Endpoints;
+namespace TimeBase.Core.Data;
 
 using System;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-using TimeBase.Core.Models;
-using TimeBase.Core.Services;
+using TimeBase.Core.Data.Models;
+using TimeBase.Core.Data.Services;
+using TimeBase.Core.Shared.Models;
 
 public static class DataEndpoints
 {

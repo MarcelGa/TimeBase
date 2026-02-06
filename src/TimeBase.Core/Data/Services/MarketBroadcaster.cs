@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-using TimeBase.Core.Hubs;
+using TimeBase.Core.Data.Hubs;
 using TimeBase.Core.Infrastructure.Entities;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Data.Services;
 
 public class MarketBroadcaster(
     IHubContext<MarketHub> hubContext,

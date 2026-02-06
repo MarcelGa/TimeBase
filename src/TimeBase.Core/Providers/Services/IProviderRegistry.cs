@@ -1,6 +1,6 @@
 using TimeBase.Core.Infrastructure.Entities;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Providers.Services;
 
 /// <summary>
 /// Interface for managing provider lifecycle and capabilities.

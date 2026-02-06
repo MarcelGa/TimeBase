@@ -1,7 +1,7 @@
+using TimeBase.Core.Data.Models;
 using TimeBase.Core.Infrastructure.Entities;
-using TimeBase.Core.Models;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Data.Services;
 
 /// <summary>
 /// Interface for data query coordination and orchestration.

@@ -3,11 +3,13 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using TimeBase.Core.Data.Models;
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
-using TimeBase.Core.Models;
+using TimeBase.Core.Providers.Services;
+using TimeBase.Core.Shared.Services;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Data.Services;
 
 /// <summary>
 /// DataCoordinator handles data queries and coordinates with providers.

@@ -2,7 +2,7 @@ using FluentValidation;
 
 using Microsoft.AspNetCore.Mvc;
 
-namespace TimeBase.Core.Models;
+namespace TimeBase.Core.Data.Models;
 
 /// <summary>
 /// Request parameters for getting historical data.

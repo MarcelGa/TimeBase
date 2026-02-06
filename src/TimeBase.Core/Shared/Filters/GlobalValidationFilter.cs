@@ -2,7 +2,7 @@ using System.Reflection;
 
 using FluentValidation;
 
-namespace TimeBase.Core.Filters;
+namespace TimeBase.Core.Shared.Filters;
 
 /// <summary>
 /// Global endpoint filter that automatically validates all request objects using FluentValidation.

@@ -2,7 +2,7 @@ using System.Threading.Channels;
 
 using TimeBase.Core.Infrastructure.Entities;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Providers.Services;
 
 /// <summary>
 /// Interface for communicating with data providers via gRPC.

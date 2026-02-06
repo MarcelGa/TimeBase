@@ -1,6 +1,6 @@
 using System.Diagnostics.Metrics;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Shared.Services;
 
 /// <summary>
 /// Centralized metrics for TimeBase operations.

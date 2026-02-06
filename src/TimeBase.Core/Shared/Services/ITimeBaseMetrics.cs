@@ -1,4 +1,4 @@
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Shared.Services;
 
 /// <summary>
 /// Interface for TimeBase business metrics tracking.

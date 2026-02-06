@@ -1,12 +1,13 @@
-namespace TimeBase.Core.Endpoints;
+namespace TimeBase.Core.Providers;
 
 using System;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-using TimeBase.Core.Models;
-using TimeBase.Core.Services;
+using TimeBase.Core.Providers.Models;
+using TimeBase.Core.Providers.Services;
+using TimeBase.Core.Shared.Models;
 
 public static class ProviderEndpoints
 {

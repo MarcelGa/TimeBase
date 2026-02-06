@@ -7,7 +7,8 @@ using Moq;
 
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
-using TimeBase.Core.Services;
+using TimeBase.Core.Providers.Services;
+using TimeBase.Core.Shared.Services;
 
 namespace TimeBase.Core.Tests.Unit.Services;
 

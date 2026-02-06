@@ -13,8 +13,9 @@ using Microsoft.Extensions.Logging;
 using Timebase.Provider;
 
 using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Shared.Services;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Providers.Services;
 
 /// <summary>
 /// gRPC client for communicating with data providers.

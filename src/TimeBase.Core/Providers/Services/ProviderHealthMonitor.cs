@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace TimeBase.Core.Services;
+using TimeBase.Core.Shared.Services;
+
+namespace TimeBase.Core.Providers.Services;
 
 /// <summary>
 /// Background service that periodically checks provider health and updates their status.

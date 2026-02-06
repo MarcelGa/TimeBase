@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace TimeBase.Core.Models;
+namespace TimeBase.Core.Providers.Models;
 
 public record InstallProviderRequest(string Repository);
 

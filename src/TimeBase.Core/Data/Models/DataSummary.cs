@@ -1,4 +1,4 @@
-namespace TimeBase.Core.Models;
+namespace TimeBase.Core.Data.Models;
 
 /// <summary>
 /// Summary information about available data for a symbol.

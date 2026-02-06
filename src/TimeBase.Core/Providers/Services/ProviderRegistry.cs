@@ -5,8 +5,9 @@ using Microsoft.Extensions.Logging;
 
 using TimeBase.Core.Infrastructure.Data;
 using TimeBase.Core.Infrastructure.Entities;
+using TimeBase.Core.Shared.Services;
 
-namespace TimeBase.Core.Services;
+namespace TimeBase.Core.Providers.Services;
 
 public class ProviderRegistry(
     TimeBaseDbContext db,

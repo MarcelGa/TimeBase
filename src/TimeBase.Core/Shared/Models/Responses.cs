@@ -1,7 +1,8 @@
+using TimeBase.Core.Data.Models;
 using TimeBase.Core.Infrastructure.Entities;
-using TimeBase.Core.Services;
+using TimeBase.Core.Providers.Services;
 
-namespace TimeBase.Core.Models;
+namespace TimeBase.Core.Shared.Models;
 
 // Provider endpoints responses
 public record GetProvidersResponse(

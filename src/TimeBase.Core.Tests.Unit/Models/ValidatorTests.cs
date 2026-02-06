@@ -1,6 +1,7 @@
 using FluentValidation.TestHelper;
 
-using TimeBase.Core.Models;
+using TimeBase.Core.Data.Models;
+using TimeBase.Core.Providers.Models;
 
 namespace TimeBase.Core.Tests.Unit.Models;
 
