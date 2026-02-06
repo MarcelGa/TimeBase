@@ -50,6 +50,13 @@ public interface IProviderClient : IDisposable
         Provider provider,
         ChannelReader<StreamControlMessage> controlChannel,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get provider symbols with metadata.
+    /// </summary>
+    /// <param name="provider">The provider to query</param>
+    /// <returns>List of symbols or null if provider is unreachable</returns>
+    Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider);
 }
 
 /// <summary>
@@ -84,4 +91,15 @@ public record ProviderCapabilities(
     bool SupportsRealtime,
     List<string> DataTypes,
     List<string> Intervals
+);
+
+/// <summary>
+/// Provider symbol metadata returned from gRPC.
+/// </summary>
+public record ProviderSymbol(
+    string Symbol,
+    string Name,
+    string Type,
+    List<string> Intervals,
+    Dictionary<string, string>? Metadata
 );

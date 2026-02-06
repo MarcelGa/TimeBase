@@ -51,4 +51,11 @@ public interface IProviderRegistry
     /// Update capabilities for all enabled providers.
     /// </summary>
     Task UpdateAllCapabilitiesAsync();
+
+    /// <summary>
+    /// Get symbols for all enabled providers or a specific provider slug.
+    /// </summary>
+    /// <param name="providerSlug">Optional provider slug to filter</param>
+    /// <returns>Dictionary keyed by provider slug</returns>
+    Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null);
 }

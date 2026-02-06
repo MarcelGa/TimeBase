@@ -297,4 +297,45 @@ public class ProviderRegistry(
 
         logger.LogInformation("Updated capabilities for {Count} providers", enabledProviders.Count);
     }
+
+    /// <summary>
+    /// Get symbols for all enabled providers or a specific provider slug.
+    /// </summary>
+    public async Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null)
+    {
+        var query = db.Providers.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(providerSlug))
+        {
+            query = query.Where(provider => provider.Slug == providerSlug);
+        }
+
+        var providers = await query.Where(provider => provider.Enabled)
+            .OrderBy(provider => provider.CreatedAt)
+            .ToListAsync();
+
+        var results = new Dictionary<string, List<ProviderSymbol>>();
+
+        foreach (var provider in providers)
+        {
+            try
+            {
+                var symbols = await providerClient.GetSymbolsAsync(provider);
+                if (symbols == null)
+                {
+                    logger.LogWarning("Failed to fetch symbols from provider {Slug}", provider.Slug);
+                    continue;
+                }
+
+                results[provider.Slug] = symbols;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch symbols from provider {Slug}", provider.Slug);
+                metrics.RecordError("provider_symbols", ex.GetType().Name);
+            }
+        }
+
+        return results;
+    }
 }

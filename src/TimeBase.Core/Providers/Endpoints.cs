@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Http;
 
 using TimeBase.Core.Providers.Models;
 using TimeBase.Core.Providers.Services;
-using TimeBase.Core.Shared.Models;
+
+using ErrorResponse = TimeBase.Core.Shared.Models.ErrorResponse;
 
 public static class ProviderEndpoints
 {
@@ -30,6 +31,28 @@ public static class ProviderEndpoints
         .WithName("GetProviders")
         .WithTags("Providers")
         .Produces<GetProvidersResponse>(200);
+
+        // Get provider symbols (optionally filtered by provider slug)
+        builder.MapGet("/providers/symbols", async (
+            string? provider,
+            IProviderRegistry registry) =>
+        {
+            var symbolsByProvider = await registry.GetAllSymbolsAsync(provider);
+
+            var providers = symbolsByProvider.Select(entry =>
+            {
+                var slug = entry.Key;
+                var name = slug;
+                return new ProviderSymbolsInfo(slug, name, entry.Value);
+            }).ToList();
+
+            var totalSymbols = providers.Sum(providerInfo => providerInfo.Symbols.Count);
+
+            return Results.Ok(new GetProviderSymbolsResponse(providers, totalSymbols));
+        })
+        .WithName("GetProviderSymbols")
+        .WithTags("Providers")
+        .Produces<GetProviderSymbolsResponse>(200);
 
         // Get provider by ID
         builder.MapGet("/providers/{id:guid}", async (Guid id, IProviderRegistry registry) =>

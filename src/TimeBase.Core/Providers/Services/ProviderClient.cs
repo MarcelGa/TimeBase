@@ -181,6 +181,51 @@ public class ProviderClient(
     }
 
     /// <summary>
+    /// Get provider symbols via gRPC.
+    /// </summary>
+    public async Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider)
+    {
+        if (string.IsNullOrEmpty(provider.GrpcEndpoint))
+        {
+            logger.LogWarning("Provider {Slug} has no gRPC endpoint configured", provider.Slug);
+            return null;
+        }
+
+        try
+        {
+            var channel = GetOrCreateChannel(provider.GrpcEndpoint);
+            var client = new DataProvider.DataProviderClient(channel);
+
+            var response = await client.GetSymbolsAsync(new Empty());
+
+            return response.Symbols.Select(symbol => new ProviderSymbol(
+                Symbol: symbol.Symbol,
+                Name: symbol.Name,
+                Type: symbol.Type,
+                Intervals: symbol.Intervals.ToList(),
+                Metadata: symbol.Metadata.Count > 0
+                    ? symbol.Metadata.ToDictionary(pair => pair.Key, pair => pair.Value)
+                    : null
+            )).ToList();
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+        {
+            logger.LogWarning(ex,
+                "Provider {Provider} is unavailable at {Endpoint}",
+                provider.Slug, provider.GrpcEndpoint);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            metrics.RecordError("provider_symbols", ex.GetType().Name);
+            logger.LogError(ex,
+                "Failed to get symbols from provider {Provider}",
+                provider.Slug);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Stream real-time data from a provider via bidirectional gRPC streaming.
     /// </summary>
     public async IAsyncEnumerable<Infrastructure.Entities.TimeSeriesData> StreamRealTimeDataAsync(

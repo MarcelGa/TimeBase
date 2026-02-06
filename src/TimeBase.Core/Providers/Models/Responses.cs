@@ -49,3 +49,14 @@ public record CheckProviderHealthResponse(
     bool Healthy,
     DateTime CheckedAt
 );
+
+public record ProviderSymbolsInfo(
+    string Slug,
+    string Name,
+    List<ProviderSymbol> Symbols
+);
+
+public record GetProviderSymbolsResponse(
+    List<ProviderSymbolsInfo> Providers,
+    int TotalSymbols
+);
