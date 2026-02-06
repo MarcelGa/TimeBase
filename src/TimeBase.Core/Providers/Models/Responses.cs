@@ -1,8 +1,7 @@
-using TimeBase.Core.Data.Models;
 using TimeBase.Core.Infrastructure.Entities;
 using TimeBase.Core.Providers.Services;
 
-namespace TimeBase.Core.Shared.Models;
+namespace TimeBase.Core.Providers.Models;
 
 // Provider endpoints responses
 public record GetProvidersResponse(
@@ -49,29 +48,4 @@ public record CheckProviderHealthResponse(
     ProviderHealthInfo Provider,
     bool Healthy,
     DateTime CheckedAt
-);
-
-// Data endpoints responses
-public record GetHistoricalDataResponse(
-    string Symbol,
-    string Interval,
-    DateTime Start,
-    DateTime End,
-    int Count,
-    List<TimeSeriesData> Data
-);
-
-public record GetDataSummaryResponse(
-    DataSummary Summary
-);
-
-public record GetProvidersForSymbolResponse(
-    string Symbol,
-    int Count,
-    List<Provider> Providers
-);
-
-// Error responses
-public record ErrorResponse(
-    string Error
 );

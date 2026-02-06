@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using FluentAssertions;
 
 using TimeBase.Core.Providers.Models;
-using TimeBase.Core.Shared.Models;
 using TimeBase.Core.Tests.Integration.Infrastructure;
 
 namespace TimeBase.Core.Tests.Integration.Endpoints;
