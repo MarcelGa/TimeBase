@@ -20,7 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        provider: [minimal-provider]
+        provider: [minimal-provider, yahoo-finance]
+        include:
+          - provider: minimal-provider
+            context: ./providers/examples/minimal-provider
+            dockerfile: ./providers/examples/minimal-provider/Dockerfile
+          - provider: yahoo-finance
+            context: ./providers/yahoo-finance
+            dockerfile: ./providers/yahoo-finance/Dockerfile
 
     steps:
       - name: Checkout code
@@ -50,8 +57,8 @@ jobs:
       - name: Build and push provider image
         uses: docker/build-push-action@v5
         with:
-          context: ./providers/examples/${{ matrix.provider }}
-          file: ./providers/examples/${{ matrix.provider }}/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -72,16 +79,20 @@ jobs:
     needs: build-providers
     strategy:
       matrix:
-        provider: [minimal-provider]
+        provider: [minimal-provider, yahoo-finance]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run provider tests
+      - name: Docker smoke test
         run: |
-          echo "Testing ${{ matrix.provider }}..."
-          # Add provider-specific tests here
-          # For now, just verify the image was built
+          echo "Running Docker smoke test for ${{ matrix.provider }}..."
           docker pull ghcr.io/${{ github.repository_owner }}/timebase-${{ matrix.provider }}:latest
-          docker run --rm ghcr.io/${{ github.repository_owner }}/timebase-${{ matrix.provider }}:latest python -c "print('Provider image is valid')"
+          docker run --rm ghcr.io/${{ github.repository_owner }}/timebase-${{ matrix.provider }}:latest python -c "print('Provider Docker image is valid')"
+
+      - name: Run provider-specific tests
+        if: matrix.provider == 'yahoo-finance'
+        uses: ./providers/yahoo-finance/.github/actions/test
+        with:
+          python-version: '3.11'

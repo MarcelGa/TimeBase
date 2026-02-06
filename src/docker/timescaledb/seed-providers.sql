@@ -15,12 +15,16 @@ VALUES (
         "version": "1.0.0",
         "slug": "yahoo-finance",
         "supportsHistorical": true,
-        "supportsRealtime": false,
-        "dataTypes": ["stocks", "etfs", "crypto"],
-        "intervals": ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]
+        "supportsRealtime": true,
+        "supportsBackfill": true,
+        "dataTypes": ["stocks", "etf", "index", "crypto"],
+        "intervals": ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"],
+        "maxLookbackDays": 3650
     }'::jsonb
 )
-ON CONFLICT (slug) DO NOTHING;
+ON CONFLICT (slug) DO UPDATE SET
+    version = EXCLUDED.version,
+    capabilities = EXCLUDED.capabilities;
 
 -- Insert Minimal Test provider (if not exists)
 INSERT INTO providers (slug, name, version, repository_url, grpc_endpoint, enabled, capabilities)

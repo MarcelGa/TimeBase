@@ -1,13 +1,14 @@
 # Yahoo Finance Provider for TimeBase
 
-A production-ready TimeBase provider that fetches real financial data from Yahoo Finance. Supports stocks, ETFs, indices, and cryptocurrencies with historical OHLCV data.
+A production-ready TimeBase provider that fetches real financial data from Yahoo Finance using the [yfinance library](https://github.com/ranaroussi/yfinance). Supports stocks, ETFs, indices, and cryptocurrencies with both historical OHLCV data and real-time WebSocket streaming.
 
 ## Features
 
-- **Real Financial Data**: Fetches actual market data from Yahoo Finance
+- **Real Financial Data**: Fetches actual market data from Yahoo Finance via yfinance
 - **Multiple Asset Types**: Stocks, ETFs, indices, cryptocurrencies
 - **Flexible Intervals**: From 1-minute to 3-month intervals
-- **Rate Limiting**: Built-in rate limiting (60/min, 2000/day)
+- **Real-time Streaming**: WebSocket-based live price updates during market hours
+- **Automatic Rate Limiting**: Managed by yfinance library
 - **Error Handling**: Robust error handling with retry logic
 - **Adjusted Data**: Automatically adjusted for splits and dividends
 - **Production Ready**: Docker container with health checks
@@ -68,19 +69,31 @@ curl "http://localhost:8080/api/data/BTC-USD?interval=1h&start=2024-01-01&end=20
 curl "http://localhost:8080/api/data/^GSPC?interval=1wk&start=2024-01-01&end=2024-12-31"
 ```
 
+## Real-time Streaming
+
+The provider supports WebSocket-based real-time streaming using `yfinance.AsyncWebSocket`:
+
+```python
+# Real-time streaming is available via gRPC StreamRealTimeData
+# Subscribe to symbols during market hours to receive live updates
+```
+
+**Note**: Real-time data is only available during market trading hours. Outside of these hours, the WebSocket connection works but no messages are sent.
+
 ## Rate Limits
 
-- **Per Minute**: 60 requests
-- **Per Day**: 2,000 requests
-
-The provider automatically enforces these limits and will wait if the limit is exceeded.
+Rate limiting is automatically managed by the yfinance library. The library handles:
+- Yahoo Finance API rate limits
+- Cookie and authentication token management
+- Automatic retries on transient failures
 
 ## Data Quality
 
-- **Source**: Yahoo Finance (yfinance library)
+- **Source**: Yahoo Finance via yfinance library (v1.1.0+)
 - **Adjustment**: Data is automatically adjusted for stock splits and dividends
 - **Reliability**: Production-grade data from Yahoo Finance
-- **Lookback**: Up to 10 years of historical data
+- **Community Support**: 21.4k+ stars, 142+ contributors
+- **Lookback**: Up to 10 years of historical data (3650 days)
 
 ## Configuration
 
@@ -126,10 +139,11 @@ asyncio.run(test())
 
 ## Limitations
 
-- **No Real-time Data**: This provider only supports historical data
-- **Rate Limits**: Subject to Yahoo Finance rate limits
+- **Real-time Data**: Only available during market trading hours
+- **Rate Limits**: Subject to Yahoo Finance rate limits (managed by yfinance)
 - **Data Availability**: Some symbols may have limited historical data
-- **Intraday Limits**: Intraday data (1m, 5m, etc.) typically limited to recent dates
+- **Intraday Limits**: Intraday data (1m, 5m, etc.) typically limited to last 60 days
+- **Tick Data**: WebSocket provides tick-level data, not aggregated OHLCV candles
 
 ## Troubleshooting
 
