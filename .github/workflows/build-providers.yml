@@ -20,14 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        provider: [minimal-provider, yahoo-finance]
+        provider: [minimal-provider, yahoo-finance, ccxt]
         include:
           - provider: minimal-provider
-            context: ./providers/examples/minimal-provider
+            context: .
             dockerfile: ./providers/examples/minimal-provider/Dockerfile
           - provider: yahoo-finance
-            context: ./providers/yahoo-finance
+            context: .
             dockerfile: ./providers/yahoo-finance/Dockerfile
+          - provider: ccxt
+            context: .
+            dockerfile: ./providers/ccxt/Dockerfile
 
     steps:
       - name: Checkout code
@@ -79,7 +82,7 @@ jobs:
     needs: build-providers
     strategy:
       matrix:
-        provider: [minimal-provider, yahoo-finance]
+        provider: [minimal-provider, yahoo-finance, ccxt]
 
     steps:
       - name: Checkout code
@@ -94,5 +97,11 @@ jobs:
       - name: Run provider-specific tests
         if: matrix.provider == 'yahoo-finance'
         uses: ./providers/yahoo-finance/.github/actions/test
+        with:
+          python-version: '3.11'
+
+      - name: Run provider-specific tests
+        if: matrix.provider == 'ccxt'
+        uses: ./providers/ccxt/.github/actions/test
         with:
           python-version: '3.11'

@@ -46,3 +46,28 @@ VALUES (
     }'::jsonb
 )
 ON CONFLICT (slug) DO NOTHING;
+
+-- Insert CCXT provider (if not exists)
+INSERT INTO providers (slug, name, version, repository_url, grpc_endpoint, enabled, capabilities)
+VALUES (
+    'ccxt',
+    'CCXT Provider',
+    '1.0.0',
+    'https://github.com/timebase/ccxt-provider',
+    'timebase-ccxt:50051',
+    true,
+    '{
+        "name": "CCXT Provider",
+        "version": "1.0.0",
+        "slug": "ccxt",
+        "supportsHistorical": true,
+        "supportsRealtime": true,
+        "supportsBackfill": true,
+        "dataTypes": ["crypto"],
+        "intervals": ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1wk", "1mo"],
+        "maxLookbackDays": 3650
+    }'::jsonb
+)
+ON CONFLICT (slug) DO UPDATE SET
+    version = EXCLUDED.version,
+    capabilities = EXCLUDED.capabilities;

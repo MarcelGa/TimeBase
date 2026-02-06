@@ -557,6 +557,7 @@ ClientBin/
 
 # Docker
 .docker/
+src/docker/docker-compose.local.yml
 
 # Temporary files
 *.tmp

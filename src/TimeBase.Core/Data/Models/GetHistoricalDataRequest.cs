@@ -30,8 +30,8 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
     {
         RuleFor(x => x.Symbol)
             .NotEmpty().WithMessage("Symbol is required")
-            .Matches(@"^[A-Z0-9\-\.]+$").WithMessage("Symbol must contain only uppercase letters, numbers, hyphens, and dots")
-            .MaximumLength(20).WithMessage("Symbol must be 20 characters or less");
+            .Matches(@"^[A-Z0-9\-\.:]+$").WithMessage("Symbol must contain only uppercase letters, numbers, hyphens, dots, and colons")
+            .MaximumLength(50).WithMessage("Symbol must be 50 characters or less");
 
         RuleFor(x => x.ProviderId)
             .NotEmpty().WithMessage("ProviderId is required");

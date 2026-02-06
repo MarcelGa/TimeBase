@@ -161,6 +161,28 @@ services:
     profiles:
       - providers  # Only start with --profile providers
 
+  # CCXT provider
+  ccxt-provider:
+    build:
+      context: ../..
+      dockerfile: providers/ccxt/Dockerfile
+    container_name: timebase-ccxt
+    ports:
+      - "50054:50051"
+    environment:
+      PYTHONPATH: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "from timebase_sdk import TimeBaseProvider; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - timebase
+    profiles:
+      - providers
+
 volumes:
   timescale-data:
     driver: local
