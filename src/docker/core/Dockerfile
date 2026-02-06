@@ -2,6 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.102-noble-amd64 AS build
 WORKDIR /src
 
+# Copy central package management files (required for restore)
+COPY src/Directory.Build.props ./
+COPY src/Directory.Packages.props ./
+
 # Copy project files for restore
 COPY src/TimeBase.Plugins.Contracts/TimeBase.Plugins.Contracts.csproj ./TimeBase.Plugins.Contracts/
 COPY src/TimeBase.Core.Infrastructure/TimeBase.Core.Infrastructure.csproj ./TimeBase.Core.Infrastructure/
