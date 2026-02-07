@@ -198,8 +198,14 @@ public static class ProviderEndpoints
         builder.MapGet("/providers/{slug}/data/{symbol}", async (
             string slug,
             [AsParameters] GetHistoricalDataRequest request,
+            IProviderRegistry registry,
             IDataCoordinator coordinator) =>
         {
+            // Validate provider exists
+            var provider = await registry.GetProviderBySlugAsync(slug);
+            if (provider == null)
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+
             // Default interval if not provided
             var interval = request.Interval ?? "1d";
 
@@ -236,6 +242,7 @@ public static class ProviderEndpoints
         .WithName("GetHistoricalData")
         .WithTags("Data")
         .Produces<GetHistoricalDataResponse>(200)
+        .Produces<ErrorResponse>(404)
         .ProducesValidationProblem()
         .Produces(500);
 
