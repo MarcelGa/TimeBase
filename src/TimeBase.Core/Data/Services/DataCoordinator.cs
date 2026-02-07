@@ -31,26 +31,26 @@ public class DataCoordinator(
         string interval,
         DateTime start,
         DateTime end,
-        Guid providerId)
+        string providerSlug)
     {
         logger.LogInformation(
-            "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End} from provider {ProviderId}",
-            symbol, interval, start, end, providerId);
+            "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End} from provider {ProviderSlug}",
+            symbol, interval, start, end, providerSlug);
 
         var stopwatch = Stopwatch.StartNew();
         try
         {
             // 1. Validate provider exists and is enabled
-            var provider = await providerRegistry.GetProviderByIdAsync(providerId);
+            var provider = await providerRegistry.GetProviderBySlugAsync(providerSlug);
             if (provider == null)
             {
-                logger.LogWarning("Provider {ProviderId} not found", providerId);
+                logger.LogWarning("Provider '{ProviderSlug}' not found", providerSlug);
                 return new List<TimeSeriesData>();
             }
 
             if (!provider.Enabled)
             {
-                logger.LogWarning("Provider {ProviderId} ({Slug}) is disabled", providerId, provider.Slug);
+                logger.LogWarning("Provider '{ProviderSlug}' is disabled", providerSlug);
                 return new List<TimeSeriesData>();
             }
 
@@ -58,7 +58,7 @@ public class DataCoordinator(
             var data = await db.TimeSeries
                 .Where(d => d.Symbol == symbol && d.Interval == interval)
                 .Where(d => d.Time >= start && d.Time <= end)
-                .Where(d => d.ProviderId == providerId)
+                .Where(d => d.ProviderId == provider.Id)
                 .OrderBy(d => d.Time)
                 .ToListAsync();
 
@@ -102,7 +102,7 @@ public class DataCoordinator(
         {
             metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("data_query", ex.GetType().Name);
-            logger.LogError(ex, "Failed to fetch data for {Symbol} from provider {ProviderId}", symbol, providerId);
+            logger.LogError(ex, "Failed to fetch data for {Symbol} from provider '{ProviderSlug}'", symbol, providerSlug);
             throw;
         }
     }

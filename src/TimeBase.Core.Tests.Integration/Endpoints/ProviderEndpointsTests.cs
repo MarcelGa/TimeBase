@@ -40,13 +40,13 @@ public class ProviderEndpointsTests : IClassFixture<TimeBaseWebApplicationFactor
     }
 
     [Fact]
-    public async Task GetProviderById_ShouldReturnNotFound_WhenProviderDoesNotExist()
+    public async Task GetProviderBySlug_ShouldReturnNotFound_WhenProviderDoesNotExist()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
+        var nonExistentSlug = "non-existent-provider";
 
         // Act
-        var response = await _client.GetAsync($"/api/providers/{nonExistentId}");
+        var response = await _client.GetAsync($"/api/providers/{nonExistentSlug}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -97,11 +97,11 @@ public class ProviderEndpointsTests : IClassFixture<TimeBaseWebApplicationFactor
     public async Task SetProviderEnabled_ShouldReturnNotFound_WhenProviderDoesNotExist()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
+        var nonExistentSlug = "non-existent-provider";
         var request = new SetProviderEnabledRequest(true);
 
         // Act
-        var response = await _client.PatchAsJsonAsync($"/api/providers/{nonExistentId}/enabled", request);
+        var response = await _client.PatchAsJsonAsync($"/api/providers/{nonExistentSlug}/enabled", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -111,10 +111,10 @@ public class ProviderEndpointsTests : IClassFixture<TimeBaseWebApplicationFactor
     public async Task UninstallProvider_ShouldReturnNotFound_WhenProviderDoesNotExist()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
+        var nonExistentSlug = "non-existent-provider";
 
         // Act
-        var response = await _client.DeleteAsync($"/api/providers/{nonExistentId}");
+        var response = await _client.DeleteAsync($"/api/providers/{nonExistentSlug}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

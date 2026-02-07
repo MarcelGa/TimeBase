@@ -17,7 +17,7 @@ public interface IDataCoordinator
         string interval,
         DateTime start,
         DateTime end,
-        Guid providerId);
+        string providerSlug);
 
     /// <summary>
     /// Get available providers for a given symbol.

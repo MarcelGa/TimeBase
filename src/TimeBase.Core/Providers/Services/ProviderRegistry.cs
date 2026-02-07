@@ -142,6 +142,20 @@ public class ProviderRegistry(
     }
 
     /// <summary>
+    /// Uninstall a provider by slug.
+    /// </summary>
+    public async Task<bool> UninstallProviderAsync(string slug)
+    {
+        var provider = await GetProviderBySlugAsync(slug);
+        if (provider == null)
+        {
+            return false;
+        }
+
+        return await UninstallProviderAsync(provider.Id);
+    }
+
+    /// <summary>
     /// Enable or disable a provider.
     /// </summary>
     public async Task<Provider?> SetProviderEnabledAsync(Guid id, bool enabled)
@@ -170,6 +184,20 @@ public class ProviderRegistry(
 
         logger.LogInformation("Provider {Slug} {Status}", provider.Slug, enabled ? "enabled" : "disabled");
         return updated;
+    }
+
+    /// <summary>
+    /// Enable or disable a provider by slug.
+    /// </summary>
+    public async Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled)
+    {
+        var provider = await GetProviderBySlugAsync(slug);
+        if (provider == null)
+        {
+            return null;
+        }
+
+        return await SetProviderEnabledAsync(provider.Id, enabled);
     }
 
     private static string ExtractSlugFromUrl(string url)
@@ -248,6 +276,20 @@ public class ProviderRegistry(
             metrics.RecordError("provider_capabilities_update", ex.GetType().Name);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Update provider capabilities by slug.
+    /// </summary>
+    public async Task<Provider?> UpdateCapabilitiesAsync(string slug)
+    {
+        var provider = await GetProviderBySlugAsync(slug);
+        if (provider == null)
+        {
+            return null;
+        }
+
+        return await UpdateCapabilitiesAsync(provider.Id);
     }
 
     /// <summary>

@@ -198,6 +198,65 @@ public class ProviderRegistryTests : IDisposable
     }
 
     [Fact]
+    public async Task UninstallProviderAsync_BySlug_WhenProviderExists_RemovesProvider()
+    {
+        // Arrange
+        var provider = CreateTestProvider("test-provider", "Test Provider");
+        _context.Providers.Add(provider);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.UninstallProviderAsync("test-provider");
+
+        // Assert
+        result.Should().BeTrue();
+
+        // Verify it's deleted
+        var deletedProvider = await _context.Providers.FindAsync(provider.Id);
+        deletedProvider.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UninstallProviderAsync_BySlug_WhenProviderDoesNotExist_ReturnsFalse()
+    {
+        // Act
+        var result = await _sut.UninstallProviderAsync("non-existent-slug");
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SetProviderEnabledAsync_BySlug_WhenProviderExists_UpdatesEnabledStatus()
+    {
+        // Arrange
+        var provider = CreateTestProvider("test-provider", "Test Provider", enabled: false);
+        _context.Providers.Add(provider);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _sut.SetProviderEnabledAsync("test-provider", enabled: true);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Enabled.Should().BeTrue();
+
+        // Verify it's persisted
+        var savedProvider = await _context.Providers.FindAsync(provider.Id);
+        savedProvider!.Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SetProviderEnabledAsync_BySlug_WhenProviderDoesNotExist_ReturnsNull()
+    {
+        // Act
+        var result = await _sut.SetProviderEnabledAsync("non-existent-slug", enabled: true);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
     public async Task GetAllSymbolsAsync_WhenProvidersExist_ReturnsSymbolsBySlug()
     {
         // Arrange

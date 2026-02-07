@@ -5,6 +5,8 @@ using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
+using TimeBase.Core.Data.Models;
+using TimeBase.Core.Data.Services;
 using TimeBase.Core.Providers.Models;
 using TimeBase.Core.Providers.Services;
 
@@ -54,12 +56,12 @@ public static class ProviderEndpoints
         .WithTags("Providers")
         .Produces<GetProviderSymbolsResponse>(200);
 
-        // Get provider by ID
-        builder.MapGet("/providers/{id:guid}", async (Guid id, IProviderRegistry registry) =>
+        // Get provider by slug
+        builder.MapGet("/providers/{slug}", async (string slug, IProviderRegistry registry) =>
         {
-            var provider = await registry.GetProviderByIdAsync(id);
+            var provider = await registry.GetProviderBySlugAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
 
             return Results.Ok(new GetProviderResponse(provider));
         })
@@ -76,7 +78,7 @@ public static class ProviderEndpoints
             try
             {
                 var provider = await registry.InstallProviderAsync(request.Repository);
-                return Results.Created($"/api/providers/{provider.Id}",
+                return Results.Created($"/api/providers/{provider.Slug}",
                     new InstallProviderResponse(
                         "Provider installed successfully",
                         provider
@@ -98,11 +100,11 @@ public static class ProviderEndpoints
         .Produces(500);
 
         // Uninstall a provider
-        builder.MapDelete("/providers/{id:guid}", async (Guid id, IProviderRegistry registry) =>
+        builder.MapDelete("/providers/{slug}", async (string slug, IProviderRegistry registry) =>
         {
-            var success = await registry.UninstallProviderAsync(id);
+            var success = await registry.UninstallProviderAsync(slug);
             if (!success)
-                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
 
             return Results.Ok(new UninstallProviderResponse("Provider uninstalled successfully"));
         })
@@ -112,14 +114,14 @@ public static class ProviderEndpoints
         .Produces<ErrorResponse>(404);
 
         // Enable/disable a provider
-        builder.MapPatch("/providers/{id:guid}/enabled", async (
-            Guid id,
+        builder.MapPatch("/providers/{slug}/enabled", async (
+            string slug,
             SetProviderEnabledRequest request,
             IProviderRegistry registry) =>
         {
-            var provider = await registry.SetProviderEnabledAsync(id, request.Enabled);
+            var provider = await registry.SetProviderEnabledAsync(slug, request.Enabled);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
 
             return Results.Ok(new SetProviderEnabledResponse(
                 $"Provider {(provider.Enabled ? "enabled" : "disabled")} successfully",
@@ -133,13 +135,13 @@ public static class ProviderEndpoints
         .Produces<ErrorResponse>(404);
 
         // Refresh provider capabilities
-        builder.MapPost("/providers/{id:guid}/capabilities", async (
-            Guid id,
+        builder.MapPost("/providers/{slug}/capabilities", async (
+            string slug,
             IProviderRegistry registry) =>
         {
-            var provider = await registry.UpdateCapabilitiesAsync(id);
+            var provider = await registry.UpdateCapabilitiesAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
 
             var capabilities = registry.GetCachedCapabilities(provider);
             return Results.Ok(new RefreshProviderCapabilitiesResponse(
@@ -170,14 +172,14 @@ public static class ProviderEndpoints
         .Produces<RefreshAllCapabilitiesResponse>(200);
 
         // Check provider health
-        builder.MapGet("/providers/{id:guid}/health", async (
-            Guid id,
+        builder.MapGet("/providers/{slug}/health", async (
+            string slug,
             IProviderRegistry registry,
             IProviderClient providerClient) =>
         {
-            var provider = await registry.GetProviderByIdAsync(id);
+            var provider = await registry.GetProviderBySlugAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider {id} not found"));
+                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
 
             var isHealthy = await providerClient.IsHealthyAsync(provider);
 
@@ -191,6 +193,51 @@ public static class ProviderEndpoints
         .WithTags("Providers")
         .Produces<CheckProviderHealthResponse>(200)
         .Produces<ErrorResponse>(404);
+
+        // Get historical data for a provider-aware query
+        builder.MapGet("/providers/{slug}/data/{symbol}", async (
+            string slug,
+            [AsParameters] GetHistoricalDataRequest request,
+            IDataCoordinator coordinator) =>
+        {
+            // Default interval if not provided
+            var interval = request.Interval ?? "1d";
+
+            // Default to last 30 days if no dates provided
+            // Ensure DateTimes are UTC (PostgreSQL requires it)
+            var startDate = request.Start.HasValue
+                ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow.AddDays(-30);
+            var endDate = request.End.HasValue
+                ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow;
+
+            try
+            {
+                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, slug);
+                return Results.Ok(new GetHistoricalDataResponse(
+                    request.Symbol,
+                    interval,
+                    startDate,
+                    endDate,
+                    data.Count,
+                    data
+                ));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    title: "Failed to fetch data",
+                    detail: ex.Message,
+                    statusCode: 500
+                );
+            }
+        })
+        .WithName("GetHistoricalData")
+        .WithTags("Data")
+        .Produces<GetHistoricalDataResponse>(200)
+        .ProducesValidationProblem()
+        .Produces(500);
 
         return endpointRouteBuilder;
     }
