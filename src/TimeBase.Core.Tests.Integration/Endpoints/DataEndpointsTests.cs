@@ -37,13 +37,13 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     }
 
     [Fact]
-    public async Task GetHistoricalData_ShouldReturnBadRequest_WhenSymbolIsMissing()
+    public async Task GetHistoricalData_ShouldReturnNotFound_WhenSymbolIsMissing()
     {
-        // Act - path should have provider slug and symbol
+        // Act - path should have provider slug and symbol, missing symbol means route doesn't match
         var response = await _client.GetAsync("/api/providers/test-provider/data/?interval=1d");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Assert - missing path segment means route not found
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -84,17 +84,12 @@ public class DataEndpointsTests : IClassFixture<TimeBaseWebApplicationFactory>, 
     }
 
     [Fact]
-    public async Task GetHistoricalData_ShouldReturnOk_WhenValidRequest()
+    public async Task GetHistoricalData_ShouldReturnNotFound_WhenProviderDoesNotExist()
     {
-        // Arrange - use a random provider slug (will return 404 for provider, not 200 with empty data)
-        // For a 200 OK response, the provider must exist in the database
-        // For this test, we expect 404 since the provider doesn't exist
-        // Changed this test to verify that a non-existent provider returns NotFound
-
-        // Act
+        // Act - use a provider slug that doesn't exist in the database
         var response = await _client.GetAsync("/api/providers/test-provider/data/AAPL?interval=1d");
 
-        // Assert
+        // Assert - provider doesn't exist, should return NotFound
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
