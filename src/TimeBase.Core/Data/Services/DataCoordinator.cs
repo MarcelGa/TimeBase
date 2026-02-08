@@ -1,7 +1,6 @@
 using System.Diagnostics;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 using TimeBase.Core.Data.Models;
 using TimeBase.Core.Infrastructure.Data;

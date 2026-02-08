@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-
 using TimeBase.Core.Data.Hubs;
 using TimeBase.Core.Data.Services;
 

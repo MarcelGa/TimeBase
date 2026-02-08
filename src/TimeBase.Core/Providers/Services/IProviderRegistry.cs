@@ -23,34 +23,14 @@ public interface IProviderRegistry
     Task<Provider?> GetProviderBySlugAsync(string slug);
 
     /// <summary>
-    /// Get a provider by its ID.
-    /// </summary>
-    Task<Provider?> GetProviderByIdAsync(Guid id);
-
-    /// <summary>
-    /// Uninstall a provider by ID.
-    /// </summary>
-    Task<bool> UninstallProviderAsync(Guid id);
-
-    /// <summary>
     /// Uninstall a provider by slug.
     /// </summary>
     Task<bool> UninstallProviderAsync(string slug);
 
     /// <summary>
-    /// Enable or disable a provider.
-    /// </summary>
-    Task<Provider?> SetProviderEnabledAsync(Guid id, bool enabled);
-
-    /// <summary>
     /// Enable or disable a provider by slug.
     /// </summary>
     Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled);
-
-    /// <summary>
-    /// Update provider capabilities by querying the provider via gRPC.
-    /// </summary>
-    Task<Provider?> UpdateCapabilitiesAsync(Guid id);
 
     /// <summary>
     /// Update provider capabilities by slug.

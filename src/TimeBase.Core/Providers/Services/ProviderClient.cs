@@ -8,8 +8,6 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
 
-using Microsoft.Extensions.Logging;
-
 using Timebase.Provider;
 
 using TimeBase.Core.Infrastructure.Entities;

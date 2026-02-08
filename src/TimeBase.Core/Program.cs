@@ -8,9 +8,7 @@ using OpenTelemetry.Trace;
 
 using Serilog;
 
-using TimeBase.Core;
 using TimeBase.Core.Data;
-using TimeBase.Core.Data.Hubs;
 using TimeBase.Core.Health;
 using TimeBase.Core.Infrastructure;
 using TimeBase.Core.Providers;

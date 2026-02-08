@@ -1,9 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 using TimeBase.Core.Infrastructure.Entities;
 using TimeBase.Core.Providers.Services;
 using TimeBase.Core.Shared.Services;
