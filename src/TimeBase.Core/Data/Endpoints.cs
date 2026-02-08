@@ -1,5 +1,7 @@
 namespace TimeBase.Core.Data;
 
+using System;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
@@ -46,6 +48,50 @@ public static class DataEndpoints
         .WithName("GetProvidersForSymbol")
         .WithTags("Data")
         .Produces<GetProvidersForSymbolResponse>(200);
+
+        // Get historical data for a symbol from a specific provider
+        builder.MapGet("/data/{symbol}", async (
+            [AsParameters] GetHistoricalDataRequest request,
+            IDataCoordinator coordinator) =>
+        {
+            // Default interval if not provided
+            var interval = request.Interval ?? "1d";
+
+            // Default to last 30 days if no dates provided
+            // Ensure DateTimes are UTC (PostgreSQL requires it)
+            var startDate = request.Start.HasValue
+                ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow.AddDays(-30);
+            var endDate = request.End.HasValue
+                ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow;
+
+            try
+            {
+                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.Provider);
+                return Results.Ok(new GetHistoricalDataResponse(
+                    request.Symbol,
+                    interval,
+                    startDate,
+                    endDate,
+                    data.Count,
+                    data
+                ));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    title: "Failed to fetch data",
+                    detail: ex.Message,
+                    statusCode: 500
+                );
+            }
+        })
+        .WithName("GetHistoricalData")
+        .WithTags("Data")
+        .Produces<GetHistoricalDataResponse>(200)
+        .ProducesValidationProblem()
+        .Produces(500);
 
         return endpointRouteBuilder;
     }

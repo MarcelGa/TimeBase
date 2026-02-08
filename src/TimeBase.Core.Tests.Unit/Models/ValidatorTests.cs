@@ -87,6 +87,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(-30),
             End: DateTime.UtcNow
@@ -108,6 +109,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: symbol!,
+            Provider: "test-provider",
             Interval: "1d",
             Start: null,
             End: null
@@ -118,6 +120,51 @@ public class GetHistoricalDataRequestValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Symbol);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public async Task Validate_WithEmptyOrNullProvider_ShouldHaveError(string? provider)
+    {
+        // Arrange
+        var request = new GetHistoricalDataRequest(
+            Symbol: "AAPL",
+            Provider: provider!,
+            Interval: "1d",
+            Start: null,
+            End: null
+        );
+
+        // Act
+        var result = await _validator.TestValidateAsync(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Provider);
+    }
+
+    [Theory]
+    [InlineData("Invalid Provider")]
+    [InlineData("UPPERCASE")]
+    [InlineData("has_underscore")]
+    [InlineData("has.dot")]
+    public async Task Validate_WithInvalidProviderFormat_ShouldHaveError(string provider)
+    {
+        // Arrange
+        var request = new GetHistoricalDataRequest(
+            Symbol: "AAPL",
+            Provider: provider,
+            Interval: "1d",
+            Start: null,
+            End: null
+        );
+
+        // Act
+        var result = await _validator.TestValidateAsync(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Provider);
     }
 
     [Theory]
@@ -135,6 +182,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: interval,
             Start: null,
             End: null
@@ -157,6 +205,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: interval,
             Start: null,
             End: null
@@ -175,6 +224,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(10),
             End: DateTime.UtcNow.AddDays(20)
@@ -193,6 +243,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: "1d",
             Start: DateTime.UtcNow.AddDays(-10),
             End: DateTime.UtcNow.AddDays(-20)
@@ -211,6 +262,7 @@ public class GetHistoricalDataRequestValidatorTests
         // Arrange
         var request = new GetHistoricalDataRequest(
             Symbol: "AAPL",
+            Provider: "test-provider",
             Interval: "1d",
             Start: DateTime.UtcNow.AddYears(-11),
             End: DateTime.UtcNow

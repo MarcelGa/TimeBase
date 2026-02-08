@@ -1,12 +1,8 @@
 namespace TimeBase.Core.Providers;
 
-using System;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-using TimeBase.Core.Data.Models;
-using TimeBase.Core.Data.Services;
 using TimeBase.Core.Providers.Models;
 using TimeBase.Core.Providers.Services;
 
@@ -193,58 +189,6 @@ public static class ProviderEndpoints
         .WithTags("Providers")
         .Produces<CheckProviderHealthResponse>(200)
         .Produces<ErrorResponse>(404);
-
-        // Get historical data for a provider-aware query
-        builder.MapGet("/providers/{slug}/data/{symbol}", async (
-            string slug,
-            [AsParameters] GetHistoricalDataRequest request,
-            IProviderRegistry registry,
-            IDataCoordinator coordinator) =>
-        {
-            // Validate provider exists
-            var provider = await registry.GetProviderBySlugAsync(slug);
-            if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
-
-            // Default interval if not provided
-            var interval = request.Interval ?? "1d";
-
-            // Default to last 30 days if no dates provided
-            // Ensure DateTimes are UTC (PostgreSQL requires it)
-            var startDate = request.Start.HasValue
-                ? DateTime.SpecifyKind(request.Start.Value, DateTimeKind.Utc)
-                : DateTime.UtcNow.AddDays(-30);
-            var endDate = request.End.HasValue
-                ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
-                : DateTime.UtcNow;
-
-            try
-            {
-                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, slug);
-                return Results.Ok(new GetHistoricalDataResponse(
-                    request.Symbol,
-                    interval,
-                    startDate,
-                    endDate,
-                    data.Count,
-                    data
-                ));
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(
-                    title: "Failed to fetch data",
-                    detail: ex.Message,
-                    statusCode: 500
-                );
-            }
-        })
-        .WithName("GetHistoricalData")
-        .WithTags("Data")
-        .Produces<GetHistoricalDataResponse>(200)
-        .Produces<ErrorResponse>(404)
-        .ProducesValidationProblem()
-        .Produces(500);
 
         return endpointRouteBuilder;
     }

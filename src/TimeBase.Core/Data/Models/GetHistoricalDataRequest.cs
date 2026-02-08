@@ -10,6 +10,7 @@ namespace TimeBase.Core.Data.Models;
 /// </summary>
 public record GetHistoricalDataRequest(
     [FromRoute] string Symbol,
+    [FromQuery] string Provider,
     [FromQuery] string? Interval,
     [FromQuery] DateTime? Start,
     [FromQuery] DateTime? End
@@ -31,6 +32,11 @@ public class GetHistoricalDataRequestValidator : AbstractValidator<GetHistorical
             .NotEmpty().WithMessage("Symbol is required")
             .Matches(@"^[A-Z0-9\-\.:]+$").WithMessage("Symbol must contain only uppercase letters, numbers, hyphens, dots, and colons")
             .MaximumLength(50).WithMessage("Symbol must be 50 characters or less");
+
+        RuleFor(x => x.Provider)
+            .NotEmpty().WithMessage("Provider is required")
+            .Matches(@"^[a-z0-9\-]+$").WithMessage("Provider must contain only lowercase letters, numbers, and hyphens")
+            .MaximumLength(100).WithMessage("Provider must be 100 characters or less");
 
         RuleFor(x => x.Interval)
             .Must(BeValidInterval).WithMessage($"Interval must be one of: {string.Join(", ", ValidIntervals)}")
