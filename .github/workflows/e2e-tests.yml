@@ -1,0 +1,148 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/TimeBase.Core/**'
+      - 'src/TimeBase.Core.Infrastructure/**'
+      - 'src/TimeBase.Plugins.Contracts/**'
+      - 'src/TimeBase.ProviderSdk/**'
+      - 'src/docker/**'
+      - 'providers/examples/minimal-provider/**'
+      - '.github/workflows/e2e-tests.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/TimeBase.Core/**'
+      - 'src/TimeBase.Core.Infrastructure/**'
+      - 'src/TimeBase.Plugins.Contracts/**'
+      - 'src/TimeBase.ProviderSdk/**'
+      - 'src/docker/**'
+      - 'providers/examples/minimal-provider/**'
+      - '.github/workflows/e2e-tests.yml'
+
+jobs:
+  e2e:
+    name: End-to-End Stack Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build core Docker image
+        run: |
+          docker build -f src/docker/core/Dockerfile -t timebase/core:latest .
+
+      - name: Build minimal-provider Docker image
+        run: |
+          docker build -f providers/examples/minimal-provider/Dockerfile -t timebase/minimal-provider:latest .
+
+      - name: Start Docker Compose stack
+        working-directory: src/docker
+        run: |
+          docker compose -f docker-compose.dev.yml up -d core minimal-provider
+
+      - name: Wait for core to be ready
+        run: |
+          echo "Waiting for core to be ready (max 60 seconds)..."
+          for i in {1..30}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health/ready || echo "000")
+            echo "Attempt $i: HTTP $status"
+            if [ "$status" = "200" ]; then
+              echo "✓ Core is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Core failed to become ready after 60 seconds"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Test core health endpoint
+        run: |
+          echo "Testing /health endpoint..."
+          response=$(curl -s http://localhost:8080/health)
+          echo "Response: $response"
+          
+          if ! echo "$response" | grep -q '"status":"Healthy"'; then
+            echo "✗ Health check failed - expected Healthy status"
+            exit 1
+          fi
+          echo "✓ Core health check passed"
+
+      - name: Test providers are registered
+        run: |
+          echo "Testing /api/providers endpoint..."
+          response=$(curl -s http://localhost:8080/api/providers)
+          echo "Response: $response"
+          
+          if ! echo "$response" | grep -q 'minimal-provider'; then
+            echo "✗ Minimal provider not found in provider list"
+            exit 1
+          fi
+          echo "✓ Minimal provider is registered"
+
+      - name: Test provider details
+        run: |
+          echo "Testing /api/providers/minimal-provider endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/providers/minimal-provider)
+          echo "HTTP Status: $response"
+          
+          if [ "$response" != "200" ]; then
+            echo "✗ Failed to get provider details (HTTP $response)"
+            exit 1
+          fi
+          echo "✓ Provider details endpoint works"
+
+      - name: Test provider symbols (gRPC GetSymbols)
+        run: |
+          echo "Testing /api/providers/minimal-provider/symbols endpoint (validates gRPC communication)..."
+          response=$(curl -s http://localhost:8080/api/providers/minimal-provider/symbols)
+          echo "Response: $response"
+          
+          # Minimal provider should return symbols or empty array
+          if ! echo "$response" | grep -q '\['; then
+            echo "✗ Invalid symbols response - expected JSON array"
+            exit 1
+          fi
+          echo "✓ gRPC GetSymbols communication works"
+
+      - name: Test historical data end-to-end (gRPC streaming)
+        run: |
+          echo "Testing historical data fetch (validates full gRPC streaming pipeline)..."
+          start_date=$(date -d '30 days ago' +%Y-%m-%d)
+          end_date=$(date +%Y-%m-%d)
+          
+          response=$(curl -s "http://localhost:8080/api/providers/minimal-provider/data/TEST?interval=1d&start=${start_date}&end=${end_date}")
+          echo "Response: $response"
+          
+          # Check if response contains data points (minimal provider generates dummy data)
+          if ! echo "$response" | grep -q '"symbol"'; then
+            echo "✗ Historical data response missing expected fields"
+            exit 1
+          fi
+          echo "✓ End-to-end historical data fetch works (REST → Core → gRPC → Provider)"
+
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        working-directory: src/docker
+        run: |
+          echo "=== Docker Compose Logs ==="
+          docker compose -f docker-compose.dev.yml logs
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            src/docker/
+
+      - name: Tear down Docker Compose stack
+        if: always()
+        working-directory: src/docker
+        run: |
+          docker compose -f docker-compose.dev.yml down -v

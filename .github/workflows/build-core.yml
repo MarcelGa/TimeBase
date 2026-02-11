@@ -11,7 +11,7 @@ on:
       - 'src/TimeBase.Core.Tests.Integration/**'
       - 'src/TimeBase.slnx'
       - 'src/.editorconfig'
-      - 'src/docker/**'
+      - 'src/docker/core/**'
       - '.github/workflows/build-core.yml'
   pull_request:
     branches: [master]
@@ -23,7 +23,7 @@ on:
       - 'src/TimeBase.Core.Tests.Integration/**'
       - 'src/TimeBase.slnx'
       - 'src/.editorconfig'
-      - 'src/docker/**'
+      - 'src/docker/core/**'
       - '.github/workflows/build-core.yml'
 
 jobs:

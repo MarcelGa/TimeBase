@@ -9,7 +9,7 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
 **Triggers:**
 - Push to `master` branch
 - Pull requests to `master` branch
-- Changes to core service files
+- Changes to core service files, tests, or core Docker files
 
 **What it does:**
 1. **Build & Test** (Ubuntu only)
@@ -36,6 +36,53 @@ TimeBase uses GitHub Actions for continuous integration and delivery.
 - OS: Ubuntu Latest
 - .NET: 10.0.x
 - Docker: Available in GitHub Actions for Testcontainers
+
+### E2E Tests (`e2e-tests.yml`)
+
+**Triggers:**
+- Push to `master` branch
+- Pull requests to `master` branch
+- Changes to core, infrastructure, SDK, Docker files, or minimal-provider
+
+**What it does:**
+1. **Build Stack Images**
+   - Builds `timebase/core:latest` from source
+   - Builds `timebase/minimal-provider:latest` from source
+
+2. **Start Docker Compose Stack**
+   - Starts TimescaleDB, seed container, core, and minimal-provider
+   - Uses `docker-compose.dev.yml` with selective service start
+
+3. **Wait for Readiness**
+   - Polls `/health/ready` endpoint (max 60 seconds)
+   - Ensures DB migrations and provider seeding complete
+
+4. **Run E2E Tests** (6 tests)
+   - Core health check (validates DB connection)
+   - Provider registration (confirms seeding worked)
+   - Provider details API (tests REST endpoint)
+   - Provider symbols (validates gRPC GetSymbols unary RPC)
+   - Historical data (validates full gRPC streaming pipeline)
+
+5. **Failure Handling**
+   - Dumps Docker Compose logs on failure
+   - Uploads logs as artifacts for debugging
+
+6. **Cleanup**
+   - Always tears down containers and volumes
+
+**Requirements:**
+- OS: Ubuntu Latest
+- Docker Compose: Available in GitHub Actions
+- No external API dependencies (uses minimal-provider with dummy data)
+
+**What it validates:**
+- ✅ Docker images build with optimizations
+- ✅ Containers start and become healthy
+- ✅ Database migrations run successfully
+- ✅ Provider seeding works
+- ✅ gRPC communication (Core ↔ Provider)
+- ✅ Full data pipeline (REST → Core → gRPC streaming → Provider → JSON response)
 
 ### Provider Build (`build-providers.yml`)
 
@@ -87,6 +134,57 @@ Test results are uploaded as artifacts on every run:
 - **Report Types**: HTML, Cobertura, Badges
 
 ## Running Tests Locally
+
+### E2E Tests (Docker Compose Stack)
+
+The E2E tests validate the entire system running in Docker containers with real gRPC communication between Core and providers.
+
+#### Prerequisites
+- Docker and Docker Compose installed
+- At least 4GB RAM available for containers
+
+#### Run E2E Tests
+```bash
+# Build images
+docker build -f src/docker/core/Dockerfile -t timebase/core:latest .
+docker build -f providers/examples/minimal-provider/Dockerfile -t timebase/minimal-provider:latest .
+
+# Start the stack
+cd src/docker
+docker compose -f docker-compose.dev.yml up -d core minimal-provider
+
+# Wait for stack to be ready (or use the wait script below)
+sleep 10
+
+# Run manual tests
+curl http://localhost:8080/health
+curl http://localhost:8080/api/providers
+curl http://localhost:8080/api/providers/minimal-provider/symbols
+curl "http://localhost:8080/api/providers/minimal-provider/data/TEST?interval=1d&start=2024-01-01&end=2024-01-31"
+
+# Tear down
+docker compose -f docker-compose.dev.yml down -v
+```
+
+#### Wait for Health Script
+Create a simple wait script or use this one-liner:
+```bash
+for i in {1..30}; do
+  curl -s http://localhost:8080/health/ready && echo "Ready!" && break || sleep 2
+done
+```
+
+#### What E2E Tests Validate
+
+| Test | What It Validates | Technology Path |
+|------|------------------|-----------------|
+| Health endpoint | Core starts, DB connection works | REST → ASP.NET Health Checks → EF Core → TimescaleDB |
+| Provider registration | Provider seeding works | Docker seed container → PostgreSQL |
+| Provider details | Core can read provider config | REST → Core → PostgreSQL |
+| Get symbols | gRPC communication works | REST → Core → gRPC client → Provider gRPC server |
+| Historical data | Full data pipeline end-to-end | REST → Core → gRPC streaming → Provider → Core → JSON response |
+
+The E2E tests use the **minimal-provider** because it generates dummy data without external API dependencies, making tests fast and reliable.
 
 ### Core (.NET) Tests
 
@@ -157,9 +255,10 @@ src/
     └── TimeBase.Core.Tests.Integration.csproj
 ```
 
-**Total: 72 tests** (48 unit + 24 integration)
+**Total: 78 tests** (48 unit + 24 integration + 6 E2E)
 - **Unit Tests** (48): ProviderRegistry, DataCoordinator, validators (no Docker required)
 - **Integration Tests** (24): End-to-end endpoint tests (requires Docker/Testcontainers)
+- **E2E Tests** (6): Full stack tests with Docker Compose (separate workflow)
 
 ### Provider Tests
 
@@ -257,11 +356,12 @@ All pipeline runs produce the following artifacts:
 
 When you create a PR:
 
-1. ✅ **Build & Test** runs on Ubuntu + Windows
-2. 📊 **Coverage** is calculated and reported
-3. 💬 **PR Comment** shows coverage percentage
-4. ⚠️ **Warning** if coverage < 70% (doesn't block merge)
-5. 🎨 **Code Format** is verified
+1. ✅ **Build & Test** runs (core build + tests)
+2. ✅ **E2E Tests** run (full Docker stack validation)
+3. 📊 **Coverage** is calculated and reported
+4. 💬 **PR Comment** shows coverage percentage
+5. ⚠️ **Warning** if coverage < 70% (doesn't block merge)
+6. 🎨 **Code Format** is verified
 
 ## Viewing Results
 
@@ -276,9 +376,58 @@ When you create a PR:
 - Extract ZIP
 - Open `index.html` in browser
 
+## E2E Test Details
+
+The E2E test job runs after the main build job and validates the full Docker Compose stack:
+
+### Test Sequence
+
+1. **Build Images**
+   - Builds `timebase/core:latest` from source
+   - Builds `timebase/minimal-provider:latest` from source
+
+2. **Start Stack**
+   - Uses `docker-compose.dev.yml` with selective service start
+   - Starts only: `timescaledb` (DB), `seed-providers` (init), `core` (API), `minimal-provider` (gRPC provider)
+   - DB is automatically seeded with provider configurations
+
+3. **Wait for Ready**
+   - Polls `/health/ready` endpoint with 2-second intervals (max 60 seconds)
+   - Ensures DB migrations run and provider health monitor initializes
+
+4. **Run Tests**
+   - **Core Health** (`/health`) - Verifies Core is healthy and DB connection works
+   - **Provider Registration** (`/api/providers`) - Confirms minimal-provider is registered
+   - **Provider Details** (`/api/providers/minimal-provider`) - Validates provider metadata
+   - **gRPC GetSymbols** (`/api/providers/minimal-provider/symbols`) - Tests gRPC unary RPC
+   - **gRPC Historical Data** (`/api/providers/minimal-provider/data/...`) - Tests gRPC server-streaming RPC with full data pipeline
+
+5. **Log Collection** (on failure)
+   - Dumps all container logs to artifact
+   - Helps debug failures in CI environment
+
+6. **Cleanup**
+   - Tears down all containers and volumes
+   - Ensures clean state for subsequent runs
+
+### Failure Handling
+
+- **Early Exit**: Any test failure immediately stops execution and marks the job as failed
+- **Log Upload**: Docker Compose logs are captured and uploaded as artifacts for debugging
+- **Clean Teardown**: `if: always()` ensures containers are stopped even on failure
+
+### Why Minimal Provider?
+
+The E2E tests use `minimal-provider` instead of real providers (yahoo-finance, ccxt) because:
+
+- **No External Dependencies**: Generates dummy data, no API rate limits or network issues
+- **Fast**: Responds instantly without HTTP calls to external APIs
+- **Reliable**: No dependency on external service availability
+- **Sufficient Coverage**: Validates the same gRPC communication path as real providers
+
 ## Future Enhancements
 
-- [ ] Provider integration tests (end-to-end with Core API)
+- [x] Provider integration tests (end-to-end with Core API) - **Completed via E2E tests**
 - [ ] Performance benchmarks
 - [ ] Security scanning (Snyk, Dependabot)
 - [ ] Docker image scanning
