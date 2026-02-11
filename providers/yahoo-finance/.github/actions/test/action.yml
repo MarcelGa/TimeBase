@@ -20,6 +20,16 @@ runs:
       shell: bash
       run: |
         pip install -e src/TimeBase.ProviderSdk
+        
+    - name: Generate protobuf files
+      shell: bash
+      run: |
+        python -m grpc_tools.protoc \
+          --proto_path=src/TimeBase.ProviderSdk/timebase_sdk/protos \
+          --python_out=src/TimeBase.ProviderSdk/timebase_sdk/generated \
+          --grpc_python_out=src/TimeBase.ProviderSdk/timebase_sdk/generated \
+          src/TimeBase.ProviderSdk/timebase_sdk/protos/provider.proto
+        sed -i 's/^import provider_pb2/from . import provider_pb2/' src/TimeBase.ProviderSdk/timebase_sdk/generated/provider_pb2_grpc.py
 
     - name: Install test dependencies
       shell: bash
