@@ -25,15 +25,11 @@ RUN dotnet publish TimeBase.Core.csproj \
     -c Release \
     -o /app/publish \
     --no-restore \
-    /p:PublishTrimmed=true \
     /p:PublishSingleFile=false \
-    /p:EnableCompressionInSingleFile=true \
     /p:DebuggerSupport=false \
     /p:EnableUnsafeBinaryFormatterSerialization=false \
     /p:EnableUnsafeUTF7Encoding=false \
-    /p:HttpActivityPropagationSupport=false \
-    /p:InvariantGlobalization=false \
-    /p:MetadataUpdaterSupport=false
+    /p:InvariantGlobalization=false
 
 ## Runtime stage - using chiseled image (no shell, no package manager, minimal attack surface)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.2-noble-chiseled-amd64 AS runtime

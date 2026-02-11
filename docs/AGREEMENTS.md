@@ -345,26 +345,26 @@ See [OBSERVABILITY.md](OBSERVABILITY.md) for detailed setup and usage instructio
    - Security: Non-root by default (app user, UID 1654), minimal attack surface
    - Trade-off: Cannot install additional packages (use HTTP health checks instead of curl)
 
-2. **Assembly Trimming** (~20-40% app size reduction)
-   - MSBuild property: `/p:PublishTrimmed=true`
-   - Removes unused framework assemblies
-   - Faster startup, smaller deployment size
-
-3. **Build Optimization Flags**:
+2. **Build Optimization Flags**:
    ```
+   /p:PublishSingleFile=false                        # Keep as separate DLLs (faster startup)
    /p:DebuggerSupport=false                          # Remove debugging metadata
    /p:EnableUnsafeBinaryFormatterSerialization=false # Remove legacy serializer
    /p:EnableUnsafeUTF7Encoding=false                 # Remove UTF-7 support
-   /p:HttpActivityPropagationSupport=false           # Remove W3C trace context (if not needed)
-   /p:MetadataUpdaterSupport=false                   # Remove hot reload metadata
+   /p:InvariantGlobalization=false                   # Keep globalization support
    ```
 
-4. **.dockerignore File**:
+3. **.dockerignore File**:
    - Exclude build artifacts (bin/, obj/, TestResults/)
    - Exclude IDE files (.vs/, .vscode/, .idea/)
    - Exclude documentation (*.md, docs/)
-   - Exclude provider code from core build context
+   - Exclude test projects from core build context
    - Result: Faster builds, smaller context (GBs → MBs)
+
+**Note on Assembly Trimming**: 
+- Assembly trimming (`/p:PublishTrimmed=true`) was tested but causes compatibility issues with EF Core, gRPC, and reflection-heavy ASP.NET Core features
+- Chiseled base image alone provides ~50% size reduction without trimming risks
+- Future: Consider trimming when .NET improves trim compatibility for web applications
 
 **Python Provider Optimization Strategy**:
 
