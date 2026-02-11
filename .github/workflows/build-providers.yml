@@ -2,16 +2,16 @@ name: Build Providers
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'providers/**'
-      - 'docker/**'
+      - 'src/docker/**'
       - '.github/workflows/build-providers.yml'
   pull_request:
-    branches: [main]
+    branches: [master]
     paths:
       - 'providers/**'
-      - 'docker/**'
+      - 'src/docker/**'
       - '.github/workflows/build-providers.yml'
 
 jobs:
@@ -58,6 +58,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push provider image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
