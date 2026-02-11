@@ -66,6 +66,7 @@ services:
       Providers__RegistryPath: /data/providers
       Logging__LogLevel__Default: Information
       Logging__LogLevel__TimeBase: Debug
+      SKIP_EF_MIGRATIONS: "true"
     volumes:
       - ../../providers:/data/providers:ro
     # Healthcheck removed - chiseled images don't have curl

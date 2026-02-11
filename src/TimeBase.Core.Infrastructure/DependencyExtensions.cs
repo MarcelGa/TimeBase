@@ -25,20 +25,31 @@ public static class DependencyExtensions
 
     public static void UseInfrastructure(this IServiceProvider serviceProvider)
     {
+        // Skip migrations in Docker - init.sql handles schema creation
+        // EF migrations conflict with TimescaleDB features (hypertables, continuous aggregates)
+        var skipMigrations = Environment.GetEnvironmentVariable("SKIP_EF_MIGRATIONS");
+        if (!string.IsNullOrEmpty(skipMigrations) && skipMigrations.Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            using var scope = serviceProvider.CreateScope();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TimeBaseDbContext>>();
+            logger.LogInformation("Skipping EF migrations (SKIP_EF_MIGRATIONS=true), using init.sql schema");
+            return;
+        }
+
         // Apply EF migrations with proper logging
-        using var scope = serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<TimeBaseDbContext>>();
+        using var migrationScope = serviceProvider.CreateScope();
+        var db = migrationScope.ServiceProvider.GetRequiredService<TimeBaseDbContext>();
+        var migrationLogger = migrationScope.ServiceProvider.GetRequiredService<ILogger<TimeBaseDbContext>>();
 
         try
         {
-            logger.LogInformation("Applying database migrations...");
+            migrationLogger.LogInformation("Applying database migrations...");
             db.Database.Migrate();
-            logger.LogInformation("Database migrations applied successfully");
+            migrationLogger.LogInformation("Database migrations applied successfully");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to apply database migrations");
+            migrationLogger.LogError(ex, "Failed to apply database migrations");
             throw;
         }
     }
