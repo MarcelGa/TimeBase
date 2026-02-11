@@ -129,16 +129,24 @@ jobs:
 
       - name: Test provider symbols (gRPC GetSymbols)
         run: |
-          echo "Testing /api/providers/minimal-provider/symbols endpoint (validates gRPC communication)..."
-          response=$(curl -s http://localhost:8080/api/providers/minimal-provider/symbols)
+          echo "Testing /api/providers/symbols?provider=minimal-provider endpoint (validates gRPC communication)..."
+          response=$(curl -s "http://localhost:8080/api/providers/symbols?provider=minimal-provider")
           echo "Response: $response"
           
-          # Minimal provider should return symbols or empty array
-          if ! echo "$response" | grep -q '\['; then
-            echo "✗ Invalid symbols response - expected JSON array"
+          # Minimal provider should return symbols
+          if ! echo "$response" | grep -q '"totalSymbols"'; then
+            echo "✗ Invalid symbols response - expected totalSymbols field"
             exit 1
           fi
-          echo "✓ gRPC GetSymbols communication works"
+          
+          # Check if we got symbols
+          total=$(echo "$response" | grep -o '"totalSymbols":[0-9]*' | cut -d':' -f2)
+          if [ "$total" -lt 1 ]; then
+            echo "✗ No symbols returned from provider"
+            exit 1
+          fi
+          
+          echo "✓ gRPC GetSymbols communication works ($total symbols returned)"
 
       - name: Test historical data end-to-end (gRPC streaming)
         run: |
@@ -146,14 +154,21 @@ jobs:
           start_date=$(date -d '30 days ago' +%Y-%m-%d)
           end_date=$(date +%Y-%m-%d)
           
-          response=$(curl -s "http://localhost:8080/api/providers/minimal-provider/data/TEST?interval=1d&start=${start_date}&end=${end_date}")
+          response=$(curl -s "http://localhost:8080/api/data/DEMO-1?interval=1d&start=${start_date}&end=${end_date}&provider=minimal-provider")
           echo "Response: $response"
           
           # Check if response contains data points (minimal provider generates dummy data)
-          if ! echo "$response" | grep -q '"symbol"'; then
+          if ! echo "$response" | grep -q '"symbol":"DEMO-1"'; then
             echo "✗ Historical data response missing expected fields"
             exit 1
           fi
+          
+          # Check if we got data count
+          if ! echo "$response" | grep -q '"count"'; then
+            echo "✗ Historical data response missing count field"
+            exit 1
+          fi
+          
           echo "✓ End-to-end historical data fetch works (REST → Core → gRPC → Provider)"
 
       - name: Show Docker Compose logs on failure
