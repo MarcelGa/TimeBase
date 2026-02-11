@@ -42,8 +42,9 @@ jobs:
       
       - name: Test provider image
         run: |
-          # Test that the image was built and can start (with 10 second timeout)
-          timeout 10s docker run --rm timebase/${{ matrix.provider }}:test || true
+          # Verify the image was built and container can start
+          # Use --init to ensure proper signal handling and faster shutdown
+          timeout --signal=KILL 5s docker run --rm --init timebase/${{ matrix.provider }}:test || true
           echo "Provider image test completed"
 
   test-yahoo-finance:
