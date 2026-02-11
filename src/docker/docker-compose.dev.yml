@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Quick start docker-compose for testing TimeBase with providers
 # Usage: docker-compose -f docker-compose.dev.yml up
 
@@ -20,10 +18,10 @@ services:
       - timescale-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U timebase -d timebase"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      interval: 5s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
     restart: unless-stopped
     networks:
       - timebase

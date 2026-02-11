@@ -39,10 +39,35 @@ jobs:
         run: |
           docker build -f providers/examples/minimal-provider/Dockerfile -t timebase/minimal-provider:latest .
 
+      - name: Clean up any existing containers and volumes
+        working-directory: src/docker
+        run: |
+          docker compose -f docker-compose.dev.yml down -v --remove-orphans || true
+
       - name: Start Docker Compose stack
         working-directory: src/docker
         run: |
           docker compose -f docker-compose.dev.yml up -d core minimal-provider
+
+      - name: Wait for database to be healthy
+        working-directory: src/docker
+        run: |
+          echo "Waiting for database to be healthy (max 60 seconds)..."
+          for i in {1..12}; do
+            health=$(docker inspect --format='{{.State.Health.Status}}' timebase-db 2>/dev/null || echo "not-found")
+            echo "Attempt $i: Database health status: $health"
+            if [ "$health" = "healthy" ]; then
+              echo "✓ Database is healthy!"
+              break
+            fi
+            if [ $i -eq 12 ]; then
+              echo "✗ Database failed to become healthy"
+              echo "=== Database logs ==="
+              docker logs timebase-db
+              exit 1
+            fi
+            sleep 5
+          done
 
       - name: Wait for core to be ready
         run: |
