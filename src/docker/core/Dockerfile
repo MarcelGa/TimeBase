@@ -19,17 +19,31 @@ COPY src/TimeBase.Plugins.Contracts/ ./TimeBase.Plugins.Contracts/
 COPY src/TimeBase.Core.Infrastructure/ ./TimeBase.Core.Infrastructure/
 COPY src/TimeBase.Core/ ./TimeBase.Core/
 
-# Build and publish
+# Build and publish with optimizations
 WORKDIR /src/TimeBase.Core
-RUN dotnet publish TimeBase.Core.csproj -c Release -o /app/publish
+RUN dotnet publish TimeBase.Core.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    /p:PublishTrimmed=true \
+    /p:PublishSingleFile=false \
+    /p:EnableCompressionInSingleFile=true \
+    /p:DebuggerSupport=false \
+    /p:EnableUnsafeBinaryFormatterSerialization=false \
+    /p:EnableUnsafeUTF7Encoding=false \
+    /p:HttpActivityPropagationSupport=false \
+    /p:InvariantGlobalization=false \
+    /p:MetadataUpdaterSupport=false
 
-## Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.2-noble-amd64 AS runtime
+## Runtime stage - using chiseled image (no shell, no package manager, minimal attack surface)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.2-noble-chiseled-amd64 AS runtime
+
+# Chiseled images run as non-root by default (app user, UID 1654)
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-# Install curl for healthchecks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Chiseled images don't have curl, but ASP.NET health checks work without it
+# The health endpoint can be checked via HTTP request from orchestrator
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080

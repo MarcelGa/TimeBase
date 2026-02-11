@@ -329,6 +329,106 @@ See [OBSERVABILITY.md](OBSERVABILITY.md) for detailed setup and usage instructio
 - Automated backups and monitoring
 - Rolling update capabilities
 
+### 14.1 Docker Image Optimization
+
+#### Multi-Stage Builds with Minimal Base Images
+
+**Decision**: Optimize all Docker images for size and security using modern base images and build techniques.
+
+**Added**: 2026-02-11
+
+**Core (.NET) Optimization Strategy**:
+
+1. **Chiseled Ubuntu Base Images** (~50% size reduction)
+   - Base: `mcr.microsoft.com/dotnet/aspnet:10.0.2-noble-chiseled-amd64`
+   - Benefits: No shell, no package manager, ~100MB vs ~200MB
+   - Security: Non-root by default (app user, UID 1654), minimal attack surface
+   - Trade-off: Cannot install additional packages (use HTTP health checks instead of curl)
+
+2. **Assembly Trimming** (~20-40% app size reduction)
+   - MSBuild property: `/p:PublishTrimmed=true`
+   - Removes unused framework assemblies
+   - Faster startup, smaller deployment size
+
+3. **Build Optimization Flags**:
+   ```
+   /p:DebuggerSupport=false                          # Remove debugging metadata
+   /p:EnableUnsafeBinaryFormatterSerialization=false # Remove legacy serializer
+   /p:EnableUnsafeUTF7Encoding=false                 # Remove UTF-7 support
+   /p:HttpActivityPropagationSupport=false           # Remove W3C trace context (if not needed)
+   /p:MetadataUpdaterSupport=false                   # Remove hot reload metadata
+   ```
+
+4. **.dockerignore File**:
+   - Exclude build artifacts (bin/, obj/, TestResults/)
+   - Exclude IDE files (.vs/, .vscode/, .idea/)
+   - Exclude documentation (*.md, docs/)
+   - Exclude provider code from core build context
+   - Result: Faster builds, smaller context (GBs → MBs)
+
+**Python Provider Optimization Strategy**:
+
+1. **Alpine Linux Base** (~60% smaller than slim)
+   - Base: `python:3.11-alpine` (~50MB vs ~130MB for slim)
+   - Benefits: Minimal OS, fewer packages, smaller attack surface
+   - Trade-off: Uses musl libc (minor compatibility consideration)
+
+2. **Multi-Stage Builds**:
+   - Builder stage: Install build dependencies
+   - Runtime stage: Copy only runtime dependencies
+   - Removes build tools from final image
+
+3. **Layer Optimization**:
+   - Copy requirements.txt first (cache pip installs)
+   - Install dependencies before copying code
+   - Leverage Docker layer caching
+
+4. **Package Management**:
+   - Use `--no-cache-dir` to avoid storing pip cache
+   - Clean apk cache after installing packages
+   - Remove build dependencies in same RUN layer
+
+**Expected Size Reductions**:
+
+| Image Type | Before | After | Savings |
+|------------|--------|-------|---------|
+| .NET Core | ~250-300 MB | ~130-180 MB | ~40-50% |
+| Python Providers | ~200-250 MB | ~80-120 MB | ~50-60% |
+
+**Health Check Adjustments**:
+
+Chiseled images don't include curl/wget. Use orchestrator-based health checks:
+
+**Docker Compose**:
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+```
+
+**Kubernetes**:
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 30
+```
+
+**Security Improvements**:
+- Reduced attack surface (no shell, no package manager in .NET images)
+- Non-root execution by default
+- Minimal dependencies = fewer CVEs
+- Smaller images = faster deployment and scanning
+
+**Alternative Options** (documented for future consideration):
+- **Alpine for .NET**: 30% additional reduction but musl libc compatibility concerns
+- **Native AOT**: Experimental, ~50-80MB total but limited library support
+- **Distroless**: Even smaller than Alpine but harder to debug
+
 ### 15. Testing Strategy
 
 #### Integration-first with Unit Coverage
