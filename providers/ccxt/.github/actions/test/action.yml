@@ -16,6 +16,11 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    - name: Install TimeBase SDK from local source
+      shell: bash
+      run: |
+        pip install -e src/TimeBase.ProviderSdk
+
     - name: Install test dependencies
       shell: bash
       run: |
