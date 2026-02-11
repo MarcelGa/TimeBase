@@ -29,7 +29,9 @@
 **/.gitattributes
 
 # Documentation (not needed in container)
+# But keep TimeBase.ProviderSdk/README.md (required by setup.py)
 **/*.md
+!src/TimeBase.ProviderSdk/README.md
 **/docs/
 
 # Docker files themselves
