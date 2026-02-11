@@ -1,4 +1,5 @@
 # Build stage
+# Updated to trigger E2E workflow
 FROM mcr.microsoft.com/dotnet/sdk:10.0.102-noble-amd64 AS build
 WORKDIR /src
 
