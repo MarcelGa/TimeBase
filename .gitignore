@@ -329,7 +329,7 @@ dmypy.json
 cython_debug/
 
 # Docker
-.dockerignore
+# Note: .dockerignore files are tracked in git to ensure consistent build contexts
 
 # IDE
 .vscode/

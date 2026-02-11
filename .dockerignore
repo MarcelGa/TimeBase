@@ -1,0 +1,51 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# IDE and editor files
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Test coverage
+**/coverage/
+**/*.coverage
+**/*.coveragexml
+
+# NuGet
+**/*.nupkg
+**/*.snupkg
+**/packages/
+
+# Git
+**/.git/
+**/.gitignore
+**/.gitattributes
+
+# Documentation (not needed in container)
+**/*.md
+**/docs/
+
+# Docker files themselves
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# CI/CD
+**/.github/
+
+# Temporary files
+**/tmp/
+**/temp/
+**/*.tmp
+**/*.log
+
+# Test projects (not needed in runtime images)
+**/TimeBase.Core.Tests.Unit/
+**/TimeBase.Core.Tests.Integration/
