@@ -1,6 +1,8 @@
 # TimeBase
 
 [![Build Core](https://github.com/MarcelGa/TimeBase/actions/workflows/build-core.yml/badge.svg)](https://github.com/MarcelGa/TimeBase/actions/workflows/build-core.yml)
+[![E2E Tests](https://github.com/MarcelGa/TimeBase/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/MarcelGa/TimeBase/actions/workflows/e2e-tests.yml)
+[![Build Providers](https://github.com/MarcelGa/TimeBase/actions/workflows/build-providers.yml/badge.svg)](https://github.com/MarcelGa/TimeBase/actions/workflows/build-providers.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
