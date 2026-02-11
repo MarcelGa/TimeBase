@@ -34,22 +34,22 @@ docker-compose -f docker-compose.dev.yml logs -f
 
 #### Get Stock Data (Apple)
 ```bash
-curl "http://localhost:8080/api/providers/yahoo/data/AAPL?interval=1d&start=2024-01-01&end=2024-01-31"
+curl "http://localhost:8080/api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-01-31"
 ```
 
 #### Get Cryptocurrency Data (Bitcoin)
 ```bash
-curl "http://localhost:8080/api/providers/yahoo/data/BTC-USD?interval=1h&start=2024-01-01&end=2024-01-02"
+curl "http://localhost:8080/api/data/BTC-USD?provider=yahoo-finance&interval=1h&start=2024-01-01&end=2024-01-02"
 ```
 
 #### Get Index Data (S&P 500)
 ```bash
-curl "http://localhost:8080/api/providers/yahoo/data/^GSPC?interval=1wk&start=2024-01-01&end=2024-12-31"
+curl "http://localhost:8080/api/data/^GSPC?provider=yahoo-finance&interval=1wk&start=2024-01-01&end=2024-12-31"
 ```
 
 #### Get ETF Data (SPDR S&P 500)
 ```bash
-curl "http://localhost:8080/api/providers/yahoo/data/SPY?interval=1d&start=2024-01-01&end=2024-01-31"
+curl "http://localhost:8080/api/data/SPY?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-01-31"
 ```
 
 ### 4. View API Documentation
@@ -105,7 +105,7 @@ docker-compose -f docker-compose.dev.yml restart yahoo-finance-provider
 3. Check provider logs for errors
 4. Test with minimal provider first:
    ```bash
-   curl "http://localhost:8080/api/providers/minimal/data/TEST?interval=1d&start=2024-01-01&end=2024-01-05"
+   curl "http://localhost:8080/api/data/TEST?interval=1d&start=2024-01-01&end=2024-01-05&provider=minimal"
    ```
 
 ### Rate Limit Errors
@@ -177,13 +177,13 @@ docker logs -f timebase-db
 
 ```bash
 # Tesla daily data
-curl "http://localhost:8080/api/providers/yahoo/data/TSLA?interval=1d&start=2024-01-01&end=2024-01-31"
+curl "http://localhost:8080/api/data/TSLA?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-01-31"
 
 # Microsoft 5-minute data (recent only)
-curl "http://localhost:8080/api/providers/yahoo/data/MSFT?interval=5m&start=2024-01-23&end=2024-01-24"
+curl "http://localhost:8080/api/data/MSFT?provider=yahoo-finance&interval=5m&start=2024-01-23&end=2024-01-24"
 
 # Gold futures
-curl "http://localhost:8080/api/providers/yahoo/data/GC=F?interval=1d&start=2024-01-01&end=2024-01-31"
+curl "http://localhost:8080/api/data/GC=F?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-01-31"
 ```
 
 ### Data Summary
