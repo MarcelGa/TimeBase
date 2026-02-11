@@ -46,18 +46,28 @@ jobs:
           timeout 10s docker run --rm timebase/${{ matrix.provider }}:test || true
           echo "Provider image test completed"
 
-  test-providers:
-    name: Test Provider Functionality
+  test-yahoo-finance:
+    name: Test Yahoo Finance Provider
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        provider: [yahoo-finance, ccxt]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run provider-specific tests
-        uses: ./providers/${{ matrix.provider }}/.github/actions/test
+      - name: Run provider tests
+        uses: ./providers/yahoo-finance/.github/actions/test
+        with:
+          python-version: '3.11'
+
+  test-ccxt:
+    name: Test CCXT Provider
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run provider tests
+        uses: ./providers/ccxt/.github/actions/test
         with:
           python-version: '3.11'
