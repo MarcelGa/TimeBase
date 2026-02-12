@@ -35,10 +35,11 @@ All time parameters accept ISO 8601 format:
 ```
 
 ### Interval Parameters
-Supported intervals (provider-dependent):
-- `1m`, `2m`, `5m`, `15m`, `30m`, `60m`, `90m`
-- `1h`, `1d`, `5d`
-- `1wk`, `1mo`, `3mo`
+Supported intervals (validated by core):
+- `1m`, `5m`, `15m`, `30m`
+- `1h`, `4h`
+- `1d`
+- `1wk`, `1mo`
 
 ---
 
@@ -72,20 +73,28 @@ GET /api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-
   "count": 252,
   "data": [
     {
-      "timestamp": "2024-01-02T00:00:00Z",
+      "time": "2024-01-02T00:00:00Z",
+      "symbol": "AAPL",
+      "providerId": "550e8400-e29b-41d4-a716-446655440000",
+      "interval": "1d",
       "open": 184.22,
       "high": 186.95,
       "low": 183.89,
       "close": 185.64,
-      "volume": 82488200
+      "volume": 82488200,
+      "metadata": null
     },
     {
-      "timestamp": "2024-01-03T00:00:00Z",
+      "time": "2024-01-03T00:00:00Z",
+      "symbol": "AAPL",
+      "providerId": "550e8400-e29b-41d4-a716-446655440000",
+      "interval": "1d",
       "open": 183.89,
       "high": 185.92,
       "low": 183.43,
       "close": 184.25,
-      "volume": 58414500
+      "volume": 58414500,
+      "metadata": null
     }
   ]
 }
@@ -107,10 +116,11 @@ GET /api/data/AAPL/summary
 {
   "summary": {
     "symbol": "AAPL",
-    "earliestData": "2020-01-01T00:00:00Z",
-    "latestData": "2024-12-31T00:00:00Z",
-    "dataPoints": 1260,
-    "providers": ["yahoo-finance"]
+    "totalDataPoints": 1260,
+    "earliestDate": "2020-01-01T00:00:00Z",
+    "latestDate": "2024-12-31T00:00:00Z",
+    "providers": 1,
+    "intervals": ["1d", "1wk"]
   }
 }
 ```
@@ -133,8 +143,18 @@ GET /api/data/AAPL/providers
   "count": 1,
   "providers": [
     {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
       "slug": "yahoo-finance",
-      "name": "Yahoo Finance Provider"
+      "name": "Yahoo Finance Provider",
+      "version": "1.0.0",
+      "enabled": true,
+      "repositoryUrl": "https://github.com/MarcelGa/TimeBase",
+      "imageUrl": null,
+      "grpcEndpoint": "localhost:50053",
+      "config": null,
+      "capabilities": null,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
     }
   ]
 }
@@ -190,10 +210,25 @@ GET /api/providers/symbols?provider=yahoo-finance
     {
       "slug": "yahoo-finance",
       "name": "yahoo-finance",
-      "symbols": ["AAPL", "MSFT", "GOOGL", "BTC-USD"]
+      "symbols": [
+        {
+          "symbol": "AAPL",
+          "name": "Apple Inc.",
+          "type": "stock",
+          "intervals": ["1d", "1wk", "1mo"],
+          "metadata": null
+        },
+        {
+          "symbol": "BTC-USD",
+          "name": "Bitcoin USD",
+          "type": "crypto",
+          "intervals": ["1d", "1h"],
+          "metadata": null
+        }
+      ]
     }
   ],
-  "totalSymbols": 4
+  "totalSymbols": 2
 }
 ```
 
@@ -290,7 +325,15 @@ Enable or disable a provider.
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "slug": "yahoo-finance",
     "name": "Yahoo Finance Provider",
-    "enabled": false
+    "version": "1.0.0",
+    "enabled": false,
+    "repositoryUrl": "https://github.com/MarcelGa/TimeBase",
+    "imageUrl": null,
+    "grpcEndpoint": "localhost:50053",
+    "config": null,
+    "capabilities": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
   }
 }
 ```
@@ -306,12 +349,23 @@ Refresh capabilities for a specific provider.
 {
   "message": "Provider capabilities updated successfully",
   "provider": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "slug": "yahoo-finance",
-    "name": "Yahoo Finance Provider"
+    "name": "Yahoo Finance Provider",
+    "version": "1.0.0",
+    "enabled": true,
+    "repositoryUrl": "https://github.com/MarcelGa/TimeBase",
+    "imageUrl": null,
+    "grpcEndpoint": "localhost:50053",
+    "config": null,
+    "capabilities": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
   },
   "capabilities": {
     "name": "Yahoo Finance Provider",
     "version": "1.0.0",
+    "slug": "yahoo-finance",
     "supportsHistorical": true,
     "supportsRealtime": true,
     "dataTypes": ["stocks", "etfs", "indices", "crypto"],
@@ -330,15 +384,35 @@ Refresh capabilities for all enabled providers.
 ```json
 {
   "message": "All provider capabilities updated successfully",
-  "providersUpdated": 2,
+  "count": 2,
   "providers": [
     {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
       "slug": "yahoo-finance",
-      "name": "Yahoo Finance Provider"
+      "name": "Yahoo Finance Provider",
+      "version": "1.0.0",
+      "enabled": true,
+      "repositoryUrl": "https://github.com/MarcelGa/TimeBase",
+      "imageUrl": null,
+      "grpcEndpoint": "localhost:50053",
+      "config": null,
+      "capabilities": null,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
       "slug": "minimal",
-      "name": "Minimal Provider"
+      "name": "Minimal Provider",
+      "version": "1.0.0",
+      "enabled": true,
+      "repositoryUrl": "https://github.com/MarcelGa/TimeBase",
+      "imageUrl": null,
+      "grpcEndpoint": "localhost:50054",
+      "config": null,
+      "capabilities": null,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
     }
   ]
 }
@@ -358,7 +432,7 @@ Check the health status of a specific provider.
     "slug": "yahoo-finance",
     "name": "Yahoo Finance Provider"
   },
-  "isHealthy": true,
+  "healthy": true,
   "checkedAt": "2024-01-01T10:30:00Z"
 }
 ```
