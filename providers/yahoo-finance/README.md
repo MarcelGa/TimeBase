@@ -52,21 +52,21 @@ docker run -p 50051:50051 timebase/yahoo-finance:latest
 
 ```bash
 # Get Apple stock daily data for 2024
-curl "http://localhost:8080/api/data/AAPL?interval=1d&start=2024-01-01&end=2024-12-31"
+curl "http://localhost:8080/api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-12-31"
 ```
 
 ### Get Crypto Data
 
 ```bash
 # Get Bitcoin hourly data
-curl "http://localhost:8080/api/data/BTC-USD?interval=1h&start=2024-01-01&end=2024-01-07"
+curl "http://localhost:8080/api/data/BTC-USD?provider=yahoo-finance&interval=1h&start=2024-01-01&end=2024-01-07"
 ```
 
 ### Get Index Data
 
 ```bash
 # Get S&P 500 weekly data
-curl "http://localhost:8080/api/data/^GSPC?interval=1wk&start=2024-01-01&end=2024-12-31"
+curl "http://localhost:8080/api/data/^GSPC?provider=yahoo-finance&interval=1wk&start=2024-01-01&end=2024-12-31"
 ```
 
 ## Real-time Streaming

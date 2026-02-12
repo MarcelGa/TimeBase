@@ -117,14 +117,11 @@ provider/
 
 **API Endpoints**:
 ```http
-# Symbol-centric
-GET /api/data/AAPL?interval=1d&start=2024-01-01&end=2024-12-31
+# Provider-aware (current - provider is required)
+GET /api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-12-31
 
-# Provider-aware
-GET /api/providers/yahoo-finance/data/AAPL?interval=1d&start=2024-01-01&end=2024-12-31
-
-# Discovery
-GET /api/symbols/AAPL/providers  # List available providers for symbol
+# Discovery - list providers that have data for a symbol
+GET /api/data/AAPL/providers
 ```
 
 ### 6. Provider Routing Strategy

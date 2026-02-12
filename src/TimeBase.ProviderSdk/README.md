@@ -130,7 +130,7 @@ curl -X POST http://localhost:8080/api/providers \
   -d '{"repository": "https://github.com/yourusername/timebase-provider-my"}'
 
 # Query data
-curl "http://localhost:8080/api/data/AAPL?interval=1d&start=2024-01-01&end=2024-01-05"
+curl "http://localhost:8080/api/data/AAPL?provider=my-provider&interval=1d&start=2024-01-01&end=2024-01-05"
 ```
 
 ## SDK Components

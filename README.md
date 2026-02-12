@@ -97,20 +97,20 @@ For detailed information, see [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
 
 ```bash
 # Get Apple stock data for January 2024
-curl "http://localhost:8080/api/data/AAPL?interval=1d&start=2024-01-01&end=2024-01-31"
+curl "http://localhost:8080/api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-01-31"
 
 # Get Bitcoin price data
-curl "http://localhost:8080/api/data/BTC-USD?interval=1h&start=2024-01-01&end=2024-01-02"
+curl "http://localhost:8080/api/data/BTC-USD?provider=yahoo-finance&interval=1h&start=2024-01-01&end=2024-01-02"
 
 # Get S&P 500 index data
-curl "http://localhost:8080/api/data/^GSPC?interval=1wk&start=2024-01-01&end=2024-12-31"
+curl "http://localhost:8080/api/data/^GSPC?provider=yahoo-finance&interval=1wk&start=2024-01-01&end=2024-12-31"
 ```
 
 **Option B: Minimal Provider (Test Data)**
 
 ```bash
 # Get test data
-curl "http://localhost:8080/api/data/TEST?interval=1d&start=2024-01-01&end=2024-01-05"
+curl "http://localhost:8080/api/data/TEST?provider=minimal&interval=1d&start=2024-01-01&end=2024-01-05"
 ```
 
 ### 4. Access API Documentation
@@ -281,8 +281,8 @@ For comprehensive provider development guides, see [PROVIDER DEVELOPMENT](docs/p
 The TimeBase REST API provides programmatic access to financial data:
 
 ```bash
-# Get historical data
-GET /api/data/AAPL?interval=1d&start=2024-01-01&end=2024-12-31
+# Get historical data (provider is required)
+GET /api/data/AAPL?provider=yahoo-finance&interval=1d&start=2024-01-01&end=2024-12-31
 
 # List providers
 GET /api/providers
