@@ -115,9 +115,6 @@ provider/
 - **Provider-aware**: Full control, comparison between providers, debugging
 - **Hybrid**: Best of both worlds, no breaking changes to add later
 
-**Current Implementation** (Phase 1):
-Provider is currently required. Auto-selection will be added in a future release.
-
 **API Endpoints**:
 ```http
 # Provider-aware (current - provider is required)
