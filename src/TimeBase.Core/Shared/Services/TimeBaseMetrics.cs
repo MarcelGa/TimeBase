@@ -15,6 +15,7 @@ public class TimeBaseMetrics : ITimeBaseMetrics
     private readonly Counter<long> _providerUninstallCounter;
     private readonly UpDownCounter<int> _activeProvidersGauge;
     private readonly Counter<long> _providerHealthCheckCounter;
+    private readonly Histogram<double> _providerCallDuration;
 
     // Data operation metrics
     private readonly Counter<long> _dataQueryCounter;
@@ -45,6 +46,11 @@ public class TimeBaseMetrics : ITimeBaseMetrics
         _providerHealthCheckCounter = _meter.CreateCounter<long>(
             "timebase.provider.health_checks",
             description: "Total number of provider health checks");
+
+        _providerCallDuration = _meter.CreateHistogram<double>(
+            "timebase.provider.call.duration",
+            unit: "ms",
+            description: "Duration of provider gRPC calls in milliseconds");
 
         // Data operation metrics
         _dataQueryCounter = _meter.CreateCounter<long>(
@@ -95,6 +101,14 @@ public class TimeBaseMetrics : ITimeBaseMetrics
         _providerHealthCheckCounter.Add(1,
             new KeyValuePair<string, object?>("provider", providerSlug),
             new KeyValuePair<string, object?>("healthy", healthy));
+    }
+
+    public void RecordProviderCall(string providerSlug, string operation, double durationMs, bool success)
+    {
+        _providerCallDuration.Record(durationMs,
+            new KeyValuePair<string, object?>("provider", providerSlug),
+            new KeyValuePair<string, object?>("operation", operation),
+            new KeyValuePair<string, object?>("success", success));
     }
 
     // Data operation methods

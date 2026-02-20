@@ -39,4 +39,9 @@ public interface ITimeBaseMetrics
     /// Record a provider health check result.
     /// </summary>
     void RecordProviderHealth(string providerSlug, bool healthy);
+
+    /// <summary>
+    /// Record a provider gRPC call duration.
+    /// </summary>
+    void RecordProviderCall(string providerSlug, string operation, double durationMs, bool success);
 }

@@ -81,6 +81,7 @@ public class ProviderClient(
             }
 
             metrics.RecordDataQuery(symbol, interval, result.Count, stopwatch.Elapsed.TotalMilliseconds, success: true);
+            metrics.RecordProviderCall(provider.Slug, "historical_data", stopwatch.Elapsed.TotalMilliseconds, success: true);
 
             logger.LogInformation(
                 "Fetched {Count} data points for {Symbol} from provider {Provider}",
@@ -91,6 +92,7 @@ public class ProviderClient(
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
         {
             metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
+            metrics.RecordProviderCall(provider.Slug, "historical_data", stopwatch.Elapsed.TotalMilliseconds, success: false);
             logger.LogError(ex,
                 "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
@@ -99,6 +101,7 @@ public class ProviderClient(
         catch (Exception ex)
         {
             metrics.RecordDataQuery(symbol, interval, 0, stopwatch.Elapsed.TotalMilliseconds, success: false);
+            metrics.RecordProviderCall(provider.Slug, "historical_data", stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("provider_grpc_call", ex.GetType().Name);
             logger.LogError(ex,
                 "Failed to fetch data from provider {Provider}",
@@ -118,12 +121,15 @@ public class ProviderClient(
             return null;
         }
 
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
             var client = new DataProvider.DataProviderClient(channel);
 
             var response = await client.GetCapabilitiesAsync(new Empty());
+
+            metrics.RecordProviderCall(provider.Slug, "capabilities", stopwatch.Elapsed.TotalMilliseconds, success: true);
 
             return new ProviderCapabilities(
                 Name: response.Name,
@@ -137,6 +143,7 @@ public class ProviderClient(
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
         {
+            metrics.RecordProviderCall(provider.Slug, "capabilities", stopwatch.Elapsed.TotalMilliseconds, success: false);
             logger.LogWarning(ex,
                 "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
@@ -144,6 +151,7 @@ public class ProviderClient(
         }
         catch (Exception ex)
         {
+            metrics.RecordProviderCall(provider.Slug, "capabilities", stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("provider_capabilities", ex.GetType().Name);
             logger.LogError(ex,
                 "Failed to get capabilities from provider {Provider}",
@@ -162,6 +170,7 @@ public class ProviderClient(
             return false;
         }
 
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
@@ -170,10 +179,13 @@ public class ProviderClient(
             var response = await client.HealthCheckAsync(new Empty(),
                 deadline: DateTime.UtcNow.AddSeconds(5));
 
+            metrics.RecordProviderCall(provider.Slug, "health_check", stopwatch.Elapsed.TotalMilliseconds, success: true);
+
             return response.Status == HealthStatus.Types.Status.Healthy;
         }
         catch
         {
+            metrics.RecordProviderCall(provider.Slug, "health_check", stopwatch.Elapsed.TotalMilliseconds, success: false);
             return false;
         }
     }
@@ -189,12 +201,15 @@ public class ProviderClient(
             return null;
         }
 
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
             var client = new DataProvider.DataProviderClient(channel);
 
             var response = await client.GetSymbolsAsync(new Empty());
+
+            metrics.RecordProviderCall(provider.Slug, "symbols", stopwatch.Elapsed.TotalMilliseconds, success: true);
 
             return response.Symbols.Select(symbol => new ProviderSymbol(
                 Symbol: symbol.Symbol,
@@ -208,6 +223,7 @@ public class ProviderClient(
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
         {
+            metrics.RecordProviderCall(provider.Slug, "symbols", stopwatch.Elapsed.TotalMilliseconds, success: false);
             logger.LogWarning(ex,
                 "Provider {Provider} is unavailable at {Endpoint}",
                 provider.Slug, provider.GrpcEndpoint);
@@ -215,6 +231,7 @@ public class ProviderClient(
         }
         catch (Exception ex)
         {
+            metrics.RecordProviderCall(provider.Slug, "symbols", stopwatch.Elapsed.TotalMilliseconds, success: false);
             metrics.RecordError("provider_symbols", ex.GetType().Name);
             logger.LogError(ex,
                 "Failed to get symbols from provider {Provider}",
