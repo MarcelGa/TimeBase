@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 
 using TimeBase.Core.Data.Models;
 using TimeBase.Core.Data.Services;
-using TimeBase.Core.Shared.Models;
 
 public static class DataEndpoints
 {
@@ -26,14 +25,16 @@ public static class DataEndpoints
         {
             var summary = await coordinator.GetDataSummaryAsync(symbol);
             if (summary == null)
-                return Results.NotFound(new ErrorResponse($"No data found for symbol {symbol}"));
+                return Results.Problem(
+                    detail: $"No data found for symbol {symbol}",
+                    statusCode: 404);
 
             return Results.Ok(new GetDataSummaryResponse(summary));
         })
         .WithName("GetDataSummary")
         .WithTags("Data")
         .Produces<GetDataSummaryResponse>(200)
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         // Get available providers for a symbol
         builder.MapGet("/data/{symbol}/providers", async (string symbol, IDataCoordinator coordinator) =>
@@ -66,26 +67,15 @@ public static class DataEndpoints
                 ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
                 : DateTime.UtcNow;
 
-            try
-            {
-                var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.Provider);
-                return Results.Ok(new GetHistoricalDataResponse(
-                    request.Symbol,
-                    interval,
-                    startDate,
-                    endDate,
-                    data.Count,
-                    data
-                ));
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(
-                    title: "Failed to fetch data",
-                    detail: ex.Message,
-                    statusCode: 500
-                );
-            }
+            var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.Provider);
+            return Results.Ok(new GetHistoricalDataResponse(
+                request.Symbol,
+                interval,
+                startDate,
+                endDate,
+                data.Count,
+                data
+            ));
         })
         .WithName("GetHistoricalData")
         .WithTags("Data")

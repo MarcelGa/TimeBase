@@ -127,6 +127,9 @@ builder.Services.AddInfrastructure(builder.Configuration, healthChecks);
 
 var app = builder.Build();
 
+// Add global exception handler (must be early in pipeline)
+app.UseExceptionHandler();
+
 // Add Serilog request logging (skip in test environments)
 if (app.Environment.EnvironmentName != "Testing")
 {

@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Http;
 using TimeBase.Core.Providers.Models;
 using TimeBase.Core.Providers.Services;
 
-using ErrorResponse = TimeBase.Core.Shared.Models.ErrorResponse;
-
 public static class ProviderEndpoints
 {
     /// <summary>
@@ -57,37 +55,28 @@ public static class ProviderEndpoints
         {
             var provider = await registry.GetProviderBySlugAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+                return Results.Problem(
+                    detail: $"Provider '{slug}' not found",
+                    statusCode: 404);
 
             return Results.Ok(new GetProviderResponse(provider));
         })
         .WithName("GetProvider")
         .WithTags("Providers")
         .Produces<GetProviderResponse>(200)
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         // Install a new provider
         builder.MapPost("/providers", async (
             InstallProviderRequest request,
             IProviderRegistry registry) =>
         {
-            try
-            {
-                var provider = await registry.InstallProviderAsync(request.Repository);
-                return Results.Created($"/api/providers/{provider.Slug}",
-                    new InstallProviderResponse(
-                        "Provider installed successfully",
-                        provider
-                    ));
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(
-                    title: "Failed to install provider",
-                    detail: ex.Message,
-                    statusCode: 500
-                );
-            }
+            var provider = await registry.InstallProviderAsync(request.Repository);
+            return Results.Created($"/api/providers/{provider.Slug}",
+                new InstallProviderResponse(
+                    "Provider installed successfully",
+                    provider
+                ));
         })
         .WithName("InstallProvider")
         .WithTags("Providers")
@@ -100,14 +89,16 @@ public static class ProviderEndpoints
         {
             var success = await registry.UninstallProviderAsync(slug);
             if (!success)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+                return Results.Problem(
+                    detail: $"Provider '{slug}' not found",
+                    statusCode: 404);
 
             return Results.Ok(new UninstallProviderResponse("Provider uninstalled successfully"));
         })
         .WithName("UninstallProvider")
         .WithTags("Providers")
         .Produces<UninstallProviderResponse>(200)
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         // Enable/disable a provider
         builder.MapPatch("/providers/{slug}/enabled", async (
@@ -117,7 +108,9 @@ public static class ProviderEndpoints
         {
             var provider = await registry.SetProviderEnabledAsync(slug, request.Enabled);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+                return Results.Problem(
+                    detail: $"Provider '{slug}' not found",
+                    statusCode: 404);
 
             return Results.Ok(new SetProviderEnabledResponse(
                 $"Provider {(provider.Enabled ? "enabled" : "disabled")} successfully",
@@ -128,7 +121,7 @@ public static class ProviderEndpoints
         .WithTags("Providers")
         .Produces<SetProviderEnabledResponse>(200)
         .ProducesValidationProblem()
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         // Refresh provider capabilities
         builder.MapPost("/providers/{slug}/capabilities", async (
@@ -137,7 +130,9 @@ public static class ProviderEndpoints
         {
             var provider = await registry.UpdateCapabilitiesAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+                return Results.Problem(
+                    detail: $"Provider '{slug}' not found",
+                    statusCode: 404);
 
             var capabilities = registry.GetCachedCapabilities(provider);
             return Results.Ok(new RefreshProviderCapabilitiesResponse(
@@ -149,7 +144,7 @@ public static class ProviderEndpoints
         .WithName("RefreshProviderCapabilities")
         .WithTags("Providers")
         .Produces<RefreshProviderCapabilitiesResponse>(200)
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         // Refresh all provider capabilities
         builder.MapPost("/providers/capabilities/refresh", async (IProviderRegistry registry) =>
@@ -175,7 +170,9 @@ public static class ProviderEndpoints
         {
             var provider = await registry.GetProviderBySlugAsync(slug);
             if (provider == null)
-                return Results.NotFound(new ErrorResponse($"Provider '{slug}' not found"));
+                return Results.Problem(
+                    detail: $"Provider '{slug}' not found",
+                    statusCode: 404);
 
             var isHealthy = await providerClient.IsHealthyAsync(provider);
 
@@ -188,7 +185,7 @@ public static class ProviderEndpoints
         .WithName("CheckProviderHealth")
         .WithTags("Providers")
         .Produces<CheckProviderHealthResponse>(200)
-        .Produces<ErrorResponse>(404);
+        .ProducesProblem(404);
 
         return endpointRouteBuilder;
     }
