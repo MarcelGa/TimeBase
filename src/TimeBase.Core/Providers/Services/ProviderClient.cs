@@ -32,7 +32,8 @@ public class ProviderClient(
         string symbol,
         string interval,
         DateTime start,
-        DateTime end)
+        DateTime end,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(provider.GrpcEndpoint))
         {
@@ -60,9 +61,9 @@ public class ProviderClient(
 
             var result = new List<Infrastructure.Entities.TimeSeriesData>();
 
-            using var call = client.GetHistoricalData(request);
+            using var call = client.GetHistoricalData(request, cancellationToken: cancellationToken);
 
-            await foreach (var dataPoint in call.ResponseStream.ReadAllAsync())
+            await foreach (var dataPoint in call.ResponseStream.ReadAllAsync(cancellationToken))
             {
                 result.Add(new Infrastructure.Entities.TimeSeriesData(
                     Time: dataPoint.Timestamp.ToDateTime(),
@@ -113,7 +114,7 @@ public class ProviderClient(
     /// <summary>
     /// Get provider capabilities via gRPC.
     /// </summary>
-    public async Task<ProviderCapabilities?> GetCapabilitiesAsync(Provider provider)
+    public async Task<ProviderCapabilities?> GetCapabilitiesAsync(Provider provider, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(provider.GrpcEndpoint))
         {
@@ -127,7 +128,7 @@ public class ProviderClient(
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
             var client = new DataProvider.DataProviderClient(channel);
 
-            var response = await client.GetCapabilitiesAsync(new Empty());
+            var response = await client.GetCapabilitiesAsync(new Empty(), cancellationToken: cancellationToken);
 
             metrics.RecordProviderCall(provider.Slug, "capabilities", stopwatch.Elapsed.TotalMilliseconds, success: true);
 
@@ -163,7 +164,7 @@ public class ProviderClient(
     /// <summary>
     /// Check if provider is healthy via gRPC.
     /// </summary>
-    public async Task<bool> IsHealthyAsync(Provider provider)
+    public async Task<bool> IsHealthyAsync(Provider provider, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(provider.GrpcEndpoint))
         {
@@ -177,7 +178,8 @@ public class ProviderClient(
             var client = new DataProvider.DataProviderClient(channel);
 
             var response = await client.HealthCheckAsync(new Empty(),
-                deadline: DateTime.UtcNow.AddSeconds(5));
+                deadline: DateTime.UtcNow.AddSeconds(5),
+                cancellationToken: cancellationToken);
 
             metrics.RecordProviderCall(provider.Slug, "health_check", stopwatch.Elapsed.TotalMilliseconds, success: true);
 
@@ -193,7 +195,7 @@ public class ProviderClient(
     /// <summary>
     /// Get provider symbols via gRPC.
     /// </summary>
-    public async Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider)
+    public async Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(provider.GrpcEndpoint))
         {
@@ -207,7 +209,7 @@ public class ProviderClient(
             var channel = GetOrCreateChannel(provider.GrpcEndpoint);
             var client = new DataProvider.DataProviderClient(channel);
 
-            var response = await client.GetSymbolsAsync(new Empty());
+            var response = await client.GetSymbolsAsync(new Empty(), cancellationToken: cancellationToken);
 
             metrics.RecordProviderCall(provider.Slug, "symbols", stopwatch.Elapsed.TotalMilliseconds, success: true);
 

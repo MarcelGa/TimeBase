@@ -9,12 +9,12 @@ public class MarketBroadcaster(
     IHubContext<MarketHub> hubContext,
     ILogger<MarketBroadcaster> logger) : IMarketBroadcaster
 {
-    public async Task BroadcastPriceUpdateAsync(TimeSeriesData data)
+    public async Task BroadcastPriceUpdateAsync(TimeSeriesData data, CancellationToken cancellationToken = default)
     {
         try
         {
             var symbol = data.Symbol.ToUpperInvariant();
-            await hubContext.Clients.Group(symbol).SendAsync("ReceivePriceUpdate", data);
+            await hubContext.Clients.Group(symbol).SendAsync("ReceivePriceUpdate", data, cancellationToken);
 
             logger.LogDebug(
                 "Broadcasted price update for {Symbol}: O={Open}, H={High}, L={Low}, C={Close}",
@@ -26,7 +26,7 @@ public class MarketBroadcaster(
         }
     }
 
-    public async Task BroadcastPriceUpdatesAsync(IEnumerable<TimeSeriesData> dataPoints)
+    public async Task BroadcastPriceUpdatesAsync(IEnumerable<TimeSeriesData> dataPoints, CancellationToken cancellationToken = default)
     {
         // Group by symbol to send only the latest data point per symbol
         foreach (var group in dataPoints.GroupBy(d => d.Symbol.ToUpperInvariant()))
@@ -35,7 +35,7 @@ public class MarketBroadcaster(
             {
                 // Send the latest data point for each symbol
                 var latestData = group.OrderByDescending(d => d.Time).First();
-                await hubContext.Clients.Group(group.Key).SendAsync("ReceivePriceUpdate", latestData);
+                await hubContext.Clients.Group(group.Key).SendAsync("ReceivePriceUpdate", latestData, cancellationToken);
 
                 logger.LogDebug(
                     "Broadcasted price update for {Symbol}: C={Close}",

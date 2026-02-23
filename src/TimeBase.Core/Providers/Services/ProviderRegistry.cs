@@ -19,7 +19,7 @@ public class ProviderRegistry(
     /// In MVP, this creates a basic provider entry.
     /// Future: Clone repo, parse manifest, build Docker image.
     /// </summary>
-    public async Task<Provider> InstallProviderAsync(string repositoryUrl)
+    public async Task<Provider> InstallProviderAsync(string repositoryUrl, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Installing provider from {RepositoryUrl}", repositoryUrl);
 
@@ -29,7 +29,7 @@ public class ProviderRegistry(
         try
         {
             // Check if provider already exists
-            var existing = await db.Providers.FirstOrDefaultAsync(p => p.RepositoryUrl == repositoryUrl);
+            var existing = await db.Providers.FirstOrDefaultAsync(p => p.RepositoryUrl == repositoryUrl, cancellationToken);
             if (existing != null)
             {
                 logger.LogWarning("Provider from {RepositoryUrl} already exists with slug {Slug}", repositoryUrl, existing.Slug);
@@ -53,7 +53,7 @@ public class ProviderRegistry(
             );
 
             db.Providers.Add(provider);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             metrics.RecordProviderInstall(slug, success: true);
             metrics.UpdateActiveProviders(1);
@@ -73,7 +73,7 @@ public class ProviderRegistry(
     /// <summary>
     /// Get all providers, optionally filtered by enabled status.
     /// </summary>
-    public async Task<List<Provider>> GetAllProvidersAsync(bool? enabled = null)
+    public async Task<List<Provider>> GetAllProvidersAsync(bool? enabled = null, CancellationToken cancellationToken = default)
     {
         var query = db.Providers.AsQueryable();
 
@@ -82,23 +82,23 @@ public class ProviderRegistry(
             query = query.Where(p => p.Enabled == enabled.Value);
         }
 
-        return await query.OrderBy(p => p.CreatedAt).ToListAsync();
+        return await query.OrderBy(p => p.CreatedAt).ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Get a provider by its slug.
     /// </summary>
-    public async Task<Provider?> GetProviderBySlugAsync(string slug)
+    public async Task<Provider?> GetProviderBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
-        return await db.Providers.FirstOrDefaultAsync(p => p.Slug == slug);
+        return await db.Providers.FirstOrDefaultAsync(p => p.Slug == slug, cancellationToken);
     }
 
     /// <summary>
     /// Get a provider by its ID.
     /// </summary>
-    public async Task<Provider?> GetProviderByIdAsync(Guid id)
+    public async Task<Provider?> GetProviderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await db.Providers.FindAsync(id);
+        return await db.Providers.FindAsync([id], cancellationToken);
     }
 
     /// <summary>
@@ -106,11 +106,11 @@ public class ProviderRegistry(
     /// In MVP, this just removes the database entry.
     /// Future: Stop container, remove image, cleanup volumes.
     /// </summary>
-    public async Task<bool> UninstallProviderAsync(Guid id)
+    public async Task<bool> UninstallProviderAsync(Guid id, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Uninstalling provider {ProviderId}", id);
 
-        var provider = await db.Providers.FindAsync(id);
+        var provider = await db.Providers.FindAsync([id], cancellationToken);
         if (provider == null)
         {
             logger.LogWarning("Provider {ProviderId} not found for uninstall", id);
@@ -120,7 +120,7 @@ public class ProviderRegistry(
         try
         {
             db.Providers.Remove(provider);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             metrics.RecordProviderUninstall(provider.Slug, success: true);
             if (provider.Enabled)
@@ -143,23 +143,23 @@ public class ProviderRegistry(
     /// <summary>
     /// Uninstall a provider by slug.
     /// </summary>
-    public async Task<bool> UninstallProviderAsync(string slug)
+    public async Task<bool> UninstallProviderAsync(string slug, CancellationToken cancellationToken = default)
     {
-        var provider = await GetProviderBySlugAsync(slug);
+        var provider = await GetProviderBySlugAsync(slug, cancellationToken);
         if (provider == null)
         {
             return false;
         }
 
-        return await UninstallProviderAsync(provider.Id);
+        return await UninstallProviderAsync(provider.Id, cancellationToken);
     }
 
     /// <summary>
     /// Enable or disable a provider.
     /// </summary>
-    public async Task<Provider?> SetProviderEnabledAsync(Guid id, bool enabled)
+    public async Task<Provider?> SetProviderEnabledAsync(Guid id, bool enabled, CancellationToken cancellationToken = default)
     {
-        var provider = await db.Providers.FindAsync(id);
+        var provider = await db.Providers.FindAsync([id], cancellationToken);
         if (provider == null)
         {
             logger.LogWarning("Provider {ProviderId} not found", id);
@@ -179,7 +179,7 @@ public class ProviderRegistry(
         };
 
         db.Entry(provider).CurrentValues.SetValues(updated);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Provider {Slug} {Status}", provider.Slug, enabled ? "enabled" : "disabled");
         return updated;
@@ -188,15 +188,15 @@ public class ProviderRegistry(
     /// <summary>
     /// Enable or disable a provider by slug.
     /// </summary>
-    public async Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled)
+    public async Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled, CancellationToken cancellationToken = default)
     {
-        var provider = await GetProviderBySlugAsync(slug);
+        var provider = await GetProviderBySlugAsync(slug, cancellationToken);
         if (provider == null)
         {
             return null;
         }
 
-        return await SetProviderEnabledAsync(provider.Id, enabled);
+        return await SetProviderEnabledAsync(provider.Id, enabled, cancellationToken);
     }
 
     private static string ExtractSlugFromUrl(string url)
@@ -228,9 +228,9 @@ public class ProviderRegistry(
     /// Update provider capabilities by querying the provider via gRPC.
     /// Caches the result in the database for faster lookups.
     /// </summary>
-    public async Task<Provider?> UpdateCapabilitiesAsync(Guid id)
+    public async Task<Provider?> UpdateCapabilitiesAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var provider = await db.Providers.FindAsync(id);
+        var provider = await db.Providers.FindAsync([id], cancellationToken);
         if (provider == null)
         {
             logger.LogWarning("Provider {ProviderId} not found", id);
@@ -241,7 +241,7 @@ public class ProviderRegistry(
 
         try
         {
-            var capabilities = await providerClient.GetCapabilitiesAsync(provider);
+            var capabilities = await providerClient.GetCapabilitiesAsync(provider, cancellationToken);
             if (capabilities == null)
             {
                 logger.LogWarning("Failed to fetch capabilities from provider {Slug}", provider.Slug);
@@ -258,7 +258,7 @@ public class ProviderRegistry(
             };
 
             db.Entry(provider).CurrentValues.SetValues(updated);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
                 "Updated capabilities for provider {Slug}: Historical={Historical}, Realtime={Realtime}, DataTypes={DataTypes}",
@@ -280,15 +280,15 @@ public class ProviderRegistry(
     /// <summary>
     /// Update provider capabilities by slug.
     /// </summary>
-    public async Task<Provider?> UpdateCapabilitiesAsync(string slug)
+    public async Task<Provider?> UpdateCapabilitiesAsync(string slug, CancellationToken cancellationToken = default)
     {
-        var provider = await GetProviderBySlugAsync(slug);
+        var provider = await GetProviderBySlugAsync(slug, cancellationToken);
         if (provider == null)
         {
             return null;
         }
 
-        return await UpdateCapabilitiesAsync(provider.Id);
+        return await UpdateCapabilitiesAsync(provider.Id, cancellationToken);
     }
 
     /// <summary>
@@ -316,18 +316,18 @@ public class ProviderRegistry(
     /// <summary>
     /// Update capabilities for all enabled providers.
     /// </summary>
-    public async Task UpdateAllCapabilitiesAsync()
+    public async Task UpdateAllCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Updating capabilities for all enabled providers");
 
-        var enabledProviders = await GetAllProvidersAsync(enabled: true);
+        var enabledProviders = await GetAllProvidersAsync(enabled: true, cancellationToken);
 
         // Process sequentially to avoid DbContext concurrency issues
         foreach (var provider in enabledProviders)
         {
             try
             {
-                await UpdateCapabilitiesAsync(provider.Id);
+                await UpdateCapabilitiesAsync(provider.Id, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -342,7 +342,7 @@ public class ProviderRegistry(
     /// <summary>
     /// Get symbols for all enabled providers or a specific provider slug.
     /// </summary>
-    public async Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null)
+    public async Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null, CancellationToken cancellationToken = default)
     {
         var query = db.Providers.AsQueryable();
 
@@ -353,7 +353,7 @@ public class ProviderRegistry(
 
         var providers = await query.Where(provider => provider.Enabled)
             .OrderBy(provider => provider.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var results = new Dictionary<string, List<ProviderSymbol>>();
 
@@ -361,7 +361,7 @@ public class ProviderRegistry(
         {
             try
             {
-                var symbols = await providerClient.GetSymbolsAsync(provider);
+                var symbols = await providerClient.GetSymbolsAsync(provider, cancellationToken);
                 if (symbols == null)
                 {
                     logger.LogWarning("Failed to fetch symbols from provider {Slug}", provider.Slug);

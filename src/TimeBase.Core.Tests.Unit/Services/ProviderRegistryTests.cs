@@ -275,7 +275,7 @@ public class ProviderRegistryTests : IDisposable
         };
 
         _providerClientMock
-            .Setup(client => client.GetSymbolsAsync(provider))
+            .Setup(client => client.GetSymbolsAsync(provider, It.IsAny<CancellationToken>()))
             .ReturnsAsync(symbols);
 
         // Act
@@ -297,11 +297,11 @@ public class ProviderRegistryTests : IDisposable
         await _context.SaveChangesAsync();
 
         _providerClientMock
-            .Setup(client => client.GetSymbolsAsync(provider1))
+            .Setup(client => client.GetSymbolsAsync(provider1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProviderSymbol> { new("AAPL", "Apple Inc.", "stock", ["1d"], null) });
 
         _providerClientMock
-            .Setup(client => client.GetSymbolsAsync(provider2))
+            .Setup(client => client.GetSymbolsAsync(provider2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProviderSymbol> { new("MSFT", "Microsoft Corp.", "stock", ["1d"], null) });
 
         // Act

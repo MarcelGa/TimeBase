@@ -30,7 +30,8 @@ public class DataCoordinator(
         string interval,
         DateTime start,
         DateTime end,
-        string providerSlug)
+        string providerSlug,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
             "Fetching historical data for {Symbol} with interval {Interval} from {Start} to {End} from provider {ProviderSlug}",
@@ -40,7 +41,7 @@ public class DataCoordinator(
         try
         {
             // 1. Validate provider exists and is enabled
-            var provider = await providerRegistry.GetProviderBySlugAsync(providerSlug);
+            var provider = await providerRegistry.GetProviderBySlugAsync(providerSlug, cancellationToken);
             if (provider == null)
             {
                 logger.LogWarning("Provider '{ProviderSlug}' not found", providerSlug);
@@ -59,7 +60,7 @@ public class DataCoordinator(
                 .Where(d => d.Time >= start && d.Time <= end)
                 .Where(d => d.ProviderId == provider.Id)
                 .OrderBy(d => d.Time)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             // 3. If data exists in database, return it
             if (data.Count > 0)
@@ -75,7 +76,7 @@ public class DataCoordinator(
                 symbol, provider.Slug);
 
             var providerData = await providerClient.GetHistoricalDataAsync(
-                provider, symbol, interval, start, end);
+                provider, symbol, interval, start, end, cancellationToken);
 
             if (providerData.Count == 0)
             {
@@ -87,7 +88,7 @@ public class DataCoordinator(
                 provider.Slug, providerData.Count, symbol);
 
             // 5. Store fetched data in database for future queries
-            await StoreTimeSeriesDataAsync(providerData);
+            await StoreTimeSeriesDataAsync(providerData, cancellationToken);
 
             metrics.RecordDataQuery(symbol, interval, providerData.Count, stopwatch.Elapsed.TotalMilliseconds, success: true);
 
@@ -110,7 +111,7 @@ public class DataCoordinator(
     /// Get available providers for a given symbol.
     /// This checks which providers have data for the requested symbol.
     /// </summary>
-    public async Task<List<Provider>> GetProvidersForSymbolAsync(string symbol)
+    public async Task<List<Provider>> GetProvidersForSymbolAsync(string symbol, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Finding providers for symbol {Symbol}", symbol);
 
@@ -118,7 +119,7 @@ public class DataCoordinator(
             .Where(d => d.Symbol == symbol)
             .Select(d => d.ProviderId)
             .Distinct()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (!providerIds.Any())
         {
@@ -129,7 +130,7 @@ public class DataCoordinator(
         var providers = await db.Providers
             .Where(p => providerIds.Contains(p.Id) && p.Enabled)
             .OrderBy(p => p.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         logger.LogInformation("Found {Count} providers for {Symbol}", providers.Count, symbol);
         return providers;
@@ -139,7 +140,7 @@ public class DataCoordinator(
     /// Store time series data in the database.
     /// Future: This will be called when ingesting data from providers.
     /// </summary>
-    public async Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints)
+    public async Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints, CancellationToken cancellationToken = default)
     {
         var list = dataPoints.ToList();
         if (!list.Any())
@@ -152,7 +153,7 @@ public class DataCoordinator(
         try
         {
             db.TimeSeries.AddRange(list);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             // Record metrics - extract symbol if all points have same symbol
             var symbol = list.Select(d => d.Symbol).Distinct().Count() == 1
@@ -174,7 +175,7 @@ public class DataCoordinator(
     /// <summary>
     /// Get data summary/statistics for a symbol.
     /// </summary>
-    public async Task<DataSummary?> GetDataSummaryAsync(string symbol)
+    public async Task<DataSummary?> GetDataSummaryAsync(string symbol, CancellationToken cancellationToken = default)
     {
         var summary = await db.TimeSeries
             .Where(d => d.Symbol == symbol)
@@ -187,7 +188,7 @@ public class DataCoordinator(
                 g.Select(d => d.ProviderId).Distinct().Count(),
                 g.Select(d => d.Interval).Distinct().ToList()
             ))
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return summary;
     }

@@ -151,31 +151,31 @@ public class GlobalExceptionHandlerTests : IClassFixture<TimeBaseWebApplicationF
     {
         public const string ExceptionMessage = "Simulated unhandled exception in provider registry";
 
-        public Task<Provider> InstallProviderAsync(string repositoryUrl)
+        public Task<Provider> InstallProviderAsync(string repositoryUrl, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<List<Provider>> GetAllProvidersAsync(bool? enabled = null)
+        public Task<List<Provider>> GetAllProvidersAsync(bool? enabled = null, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<Provider?> GetProviderBySlugAsync(string slug)
+        public Task<Provider?> GetProviderBySlugAsync(string slug, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<bool> UninstallProviderAsync(string slug)
+        public Task<bool> UninstallProviderAsync(string slug, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled)
+        public Task<Provider?> SetProviderEnabledAsync(string slug, bool enabled, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<Provider?> UpdateCapabilitiesAsync(string slug)
+        public Task<Provider?> UpdateCapabilitiesAsync(string slug, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
         public ProviderCapabilities? GetCachedCapabilities(Provider provider)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task UpdateAllCapabilitiesAsync()
+        public Task UpdateAllCapabilitiesAsync(CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null)
+        public Task<Dictionary<string, List<ProviderSymbol>>> GetAllSymbolsAsync(string? providerSlug = null, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
     }
 
@@ -188,16 +188,16 @@ public class GlobalExceptionHandlerTests : IClassFixture<TimeBaseWebApplicationF
         public const string ExceptionMessage = "Simulated unhandled exception in data coordinator";
 
         public Task<List<TimeSeriesData>> GetHistoricalAsync(
-            string symbol, string interval, DateTime start, DateTime end, string providerSlug)
+            string symbol, string interval, DateTime start, DateTime end, string providerSlug, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<List<Provider>> GetProvidersForSymbolAsync(string symbol)
+        public Task<List<Provider>> GetProvidersForSymbolAsync(string symbol, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints)
+        public Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
 
-        public Task<DataSummary?> GetDataSummaryAsync(string symbol)
+        public Task<DataSummary?> GetDataSummaryAsync(string symbol, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(ExceptionMessage);
     }
 }

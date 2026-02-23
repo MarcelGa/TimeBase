@@ -21,9 +21,9 @@ public static class DataEndpoints
         var builder = apiGroup ?? endpointRouteBuilder;
 
         // Get data summary for a symbol
-        builder.MapGet("/data/{symbol}/summary", async (string symbol, IDataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/summary", async (string symbol, IDataCoordinator coordinator, CancellationToken cancellationToken) =>
         {
-            var summary = await coordinator.GetDataSummaryAsync(symbol);
+            var summary = await coordinator.GetDataSummaryAsync(symbol, cancellationToken);
             if (summary == null)
                 return Results.Problem(
                     detail: $"No data found for symbol {symbol}",
@@ -37,9 +37,9 @@ public static class DataEndpoints
         .ProducesProblem(404);
 
         // Get available providers for a symbol
-        builder.MapGet("/data/{symbol}/providers", async (string symbol, IDataCoordinator coordinator) =>
+        builder.MapGet("/data/{symbol}/providers", async (string symbol, IDataCoordinator coordinator, CancellationToken cancellationToken) =>
         {
-            var providers = await coordinator.GetProvidersForSymbolAsync(symbol);
+            var providers = await coordinator.GetProvidersForSymbolAsync(symbol, cancellationToken);
             return Results.Ok(new GetProvidersForSymbolResponse(
                 symbol,
                 providers.Count,
@@ -53,7 +53,8 @@ public static class DataEndpoints
         // Get historical data for a symbol from a specific provider
         builder.MapGet("/data/{symbol}", async (
             [AsParameters] GetHistoricalDataRequest request,
-            IDataCoordinator coordinator) =>
+            IDataCoordinator coordinator,
+            CancellationToken cancellationToken) =>
         {
             // Default interval if not provided
             var interval = request.Interval ?? "1d";
@@ -67,7 +68,7 @@ public static class DataEndpoints
                 ? DateTime.SpecifyKind(request.End.Value, DateTimeKind.Utc)
                 : DateTime.UtcNow;
 
-            var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.Provider);
+            var data = await coordinator.GetHistoricalAsync(request.Symbol, interval, startDate, endDate, request.Provider, cancellationToken);
             return Results.Ok(new GetHistoricalDataResponse(
                 request.Symbol,
                 interval,

@@ -21,12 +21,13 @@ public class MarketHub(
     public async Task SubscribeToSymbol(string symbol, string interval = "1m")
     {
         var normalizedSymbol = symbol.ToUpperInvariant();
+        var cancellationToken = Context.ConnectionAborted;
 
         // Add to SignalR group for broadcasting
-        await Groups.AddToGroupAsync(Context.ConnectionId, normalizedSymbol);
+        await Groups.AddToGroupAsync(Context.ConnectionId, normalizedSymbol, cancellationToken);
 
         // Subscribe to real-time data from providers
-        await streamingService.SubscribeAsync(normalizedSymbol, interval);
+        await streamingService.SubscribeAsync(normalizedSymbol, interval, cancellationToken);
 
         logger.LogInformation(
             "Client {ConnectionId} subscribed to symbol {Symbol}/{Interval}",
@@ -41,12 +42,13 @@ public class MarketHub(
     public async Task UnsubscribeFromSymbol(string symbol, string interval = "1m")
     {
         var normalizedSymbol = symbol.ToUpperInvariant();
+        var cancellationToken = Context.ConnectionAborted;
 
         // Remove from SignalR group
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, normalizedSymbol);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, normalizedSymbol, cancellationToken);
 
         // Unsubscribe from real-time data from providers
-        await streamingService.UnsubscribeAsync(normalizedSymbol, interval);
+        await streamingService.UnsubscribeAsync(normalizedSymbol, interval, cancellationToken);
 
         logger.LogInformation(
             "Client {ConnectionId} unsubscribed from symbol {Symbol}/{Interval}",

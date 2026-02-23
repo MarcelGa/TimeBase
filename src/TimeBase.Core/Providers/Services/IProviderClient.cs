@@ -23,21 +23,24 @@ public interface IProviderClient : IDisposable
         string symbol,
         string interval,
         DateTime start,
-        DateTime end);
+        DateTime end,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get provider capabilities.
     /// </summary>
     /// <param name="provider">The provider to query</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Provider capabilities or null if provider is unreachable</returns>
-    Task<ProviderCapabilities?> GetCapabilitiesAsync(Provider provider);
+    Task<ProviderCapabilities?> GetCapabilitiesAsync(Provider provider, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Check if a provider is healthy and reachable.
     /// </summary>
     /// <param name="provider">The provider to check</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if healthy, false otherwise</returns>
-    Task<bool> IsHealthyAsync(Provider provider);
+    Task<bool> IsHealthyAsync(Provider provider, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Stream real-time data from a provider via bidirectional gRPC streaming.
@@ -56,7 +59,7 @@ public interface IProviderClient : IDisposable
     /// </summary>
     /// <param name="provider">The provider to query</param>
     /// <returns>List of symbols or null if provider is unreachable</returns>
-    Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider);
+    Task<List<ProviderSymbol>?> GetSymbolsAsync(Provider provider, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

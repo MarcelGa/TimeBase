@@ -10,10 +10,10 @@ public interface IMarketBroadcaster
     /// <summary>
     /// Broadcast a price update to all clients subscribed to the symbol.
     /// </summary>
-    Task BroadcastPriceUpdateAsync(TimeSeriesData data);
+    Task BroadcastPriceUpdateAsync(TimeSeriesData data, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Broadcast price updates for multiple data points.
     /// </summary>
-    Task BroadcastPriceUpdatesAsync(IEnumerable<TimeSeriesData> dataPoints);
+    Task BroadcastPriceUpdatesAsync(IEnumerable<TimeSeriesData> dataPoints, CancellationToken cancellationToken = default);
 }

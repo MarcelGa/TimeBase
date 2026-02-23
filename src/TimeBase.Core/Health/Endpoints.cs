@@ -42,6 +42,6 @@ public static class Endpoints
             }),
             totalDuration = report.TotalDuration.TotalMilliseconds
         });
-        await context.Response.WriteAsync(result);
+        await context.Response.WriteAsync(result, context.RequestAborted);
     }
 }

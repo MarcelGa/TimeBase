@@ -19,9 +19,9 @@ public static class ProviderEndpoints
         var builder = apiGroup ?? endpointRouteBuilder;
 
         // Get all providers
-        builder.MapGet("/providers", async (IProviderRegistry registry) =>
+        builder.MapGet("/providers", async (IProviderRegistry registry, CancellationToken cancellationToken) =>
         {
-            var providers = await registry.GetAllProvidersAsync();
+            var providers = await registry.GetAllProvidersAsync(cancellationToken: cancellationToken);
             return Results.Ok(new GetProvidersResponse(providers));
         })
         .WithName("GetProviders")
@@ -31,9 +31,10 @@ public static class ProviderEndpoints
         // Get provider symbols (optionally filtered by provider slug)
         builder.MapGet("/providers/symbols", async (
             string? provider,
-            IProviderRegistry registry) =>
+            IProviderRegistry registry,
+            CancellationToken cancellationToken) =>
         {
-            var symbolsByProvider = await registry.GetAllSymbolsAsync(provider);
+            var symbolsByProvider = await registry.GetAllSymbolsAsync(provider, cancellationToken);
 
             var providers = symbolsByProvider.Select(entry =>
             {
@@ -51,9 +52,9 @@ public static class ProviderEndpoints
         .Produces<GetProviderSymbolsResponse>(200);
 
         // Get provider by slug
-        builder.MapGet("/providers/{slug}", async (string slug, IProviderRegistry registry) =>
+        builder.MapGet("/providers/{slug}", async (string slug, IProviderRegistry registry, CancellationToken cancellationToken) =>
         {
-            var provider = await registry.GetProviderBySlugAsync(slug);
+            var provider = await registry.GetProviderBySlugAsync(slug, cancellationToken);
             if (provider == null)
                 return Results.Problem(
                     detail: $"Provider '{slug}' not found",
@@ -69,9 +70,10 @@ public static class ProviderEndpoints
         // Install a new provider
         builder.MapPost("/providers", async (
             InstallProviderRequest request,
-            IProviderRegistry registry) =>
+            IProviderRegistry registry,
+            CancellationToken cancellationToken) =>
         {
-            var provider = await registry.InstallProviderAsync(request.Repository);
+            var provider = await registry.InstallProviderAsync(request.Repository, cancellationToken);
             return Results.Created($"/api/providers/{provider.Slug}",
                 new InstallProviderResponse(
                     "Provider installed successfully",
@@ -85,9 +87,9 @@ public static class ProviderEndpoints
         .Produces(500);
 
         // Uninstall a provider
-        builder.MapDelete("/providers/{slug}", async (string slug, IProviderRegistry registry) =>
+        builder.MapDelete("/providers/{slug}", async (string slug, IProviderRegistry registry, CancellationToken cancellationToken) =>
         {
-            var success = await registry.UninstallProviderAsync(slug);
+            var success = await registry.UninstallProviderAsync(slug, cancellationToken);
             if (!success)
                 return Results.Problem(
                     detail: $"Provider '{slug}' not found",
@@ -104,9 +106,10 @@ public static class ProviderEndpoints
         builder.MapPatch("/providers/{slug}/enabled", async (
             string slug,
             SetProviderEnabledRequest request,
-            IProviderRegistry registry) =>
+            IProviderRegistry registry,
+            CancellationToken cancellationToken) =>
         {
-            var provider = await registry.SetProviderEnabledAsync(slug, request.Enabled);
+            var provider = await registry.SetProviderEnabledAsync(slug, request.Enabled, cancellationToken);
             if (provider == null)
                 return Results.Problem(
                     detail: $"Provider '{slug}' not found",
@@ -126,9 +129,10 @@ public static class ProviderEndpoints
         // Refresh provider capabilities
         builder.MapPost("/providers/{slug}/capabilities", async (
             string slug,
-            IProviderRegistry registry) =>
+            IProviderRegistry registry,
+            CancellationToken cancellationToken) =>
         {
-            var provider = await registry.UpdateCapabilitiesAsync(slug);
+            var provider = await registry.UpdateCapabilitiesAsync(slug, cancellationToken);
             if (provider == null)
                 return Results.Problem(
                     detail: $"Provider '{slug}' not found",
@@ -147,10 +151,10 @@ public static class ProviderEndpoints
         .ProducesProblem(404);
 
         // Refresh all provider capabilities
-        builder.MapPost("/providers/capabilities/refresh", async (IProviderRegistry registry) =>
+        builder.MapPost("/providers/capabilities/refresh", async (IProviderRegistry registry, CancellationToken cancellationToken) =>
         {
-            await registry.UpdateAllCapabilitiesAsync();
-            var providers = await registry.GetAllProvidersAsync(enabled: true);
+            await registry.UpdateAllCapabilitiesAsync(cancellationToken);
+            var providers = await registry.GetAllProvidersAsync(enabled: true, cancellationToken);
 
             return Results.Ok(new RefreshAllCapabilitiesResponse(
                 "All provider capabilities updated successfully",
@@ -166,15 +170,16 @@ public static class ProviderEndpoints
         builder.MapGet("/providers/{slug}/health", async (
             string slug,
             IProviderRegistry registry,
-            IProviderClient providerClient) =>
+            IProviderClient providerClient,
+            CancellationToken cancellationToken) =>
         {
-            var provider = await registry.GetProviderBySlugAsync(slug);
+            var provider = await registry.GetProviderBySlugAsync(slug, cancellationToken);
             if (provider == null)
                 return Results.Problem(
                     detail: $"Provider '{slug}' not found",
                     statusCode: 404);
 
-            var isHealthy = await providerClient.IsHealthyAsync(provider);
+            var isHealthy = await providerClient.IsHealthyAsync(provider, cancellationToken);
 
             return Results.Ok(new CheckProviderHealthResponse(
                 new ProviderHealthInfo(provider.Id, provider.Slug, provider.Name),

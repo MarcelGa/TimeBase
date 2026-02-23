@@ -56,12 +56,12 @@ public class RealTimeStreamingService : BackgroundService
     /// Subscribe to real-time data for a symbol/interval combination.
     /// Called by the SignalR hub when a client subscribes.
     /// </summary>
-    public async Task SubscribeAsync(string symbol, string interval = "1m")
+    public async Task SubscribeAsync(string symbol, string interval = "1m", CancellationToken cancellationToken = default)
     {
         await _subscriptionChannel.Writer.WriteAsync(new SubscriptionRequest(
             Action: SubscriptionAction.Subscribe,
             Symbol: symbol.ToUpperInvariant(),
-            Interval: interval));
+            Interval: interval), cancellationToken);
 
         _logger.LogInformation("Subscription request queued: {Symbol}/{Interval}", symbol, interval);
     }
@@ -70,12 +70,12 @@ public class RealTimeStreamingService : BackgroundService
     /// Unsubscribe from real-time data for a symbol/interval combination.
     /// Called by the SignalR hub when a client unsubscribes.
     /// </summary>
-    public async Task UnsubscribeAsync(string symbol, string interval = "1m")
+    public async Task UnsubscribeAsync(string symbol, string interval = "1m", CancellationToken cancellationToken = default)
     {
         await _subscriptionChannel.Writer.WriteAsync(new SubscriptionRequest(
             Action: SubscriptionAction.Unsubscribe,
             Symbol: symbol.ToUpperInvariant(),
-            Interval: interval));
+            Interval: interval), cancellationToken);
 
         _logger.LogInformation("Unsubscription request queued: {Symbol}/{Interval}", symbol, interval);
     }
@@ -135,7 +135,7 @@ public class RealTimeStreamingService : BackgroundService
         // Get providers that support real-time streaming
         using var scope = _serviceProvider.CreateScope();
         var registry = scope.ServiceProvider.GetRequiredService<IProviderRegistry>();
-        var providers = await registry.GetAllProvidersAsync(enabled: true);
+        var providers = await registry.GetAllProvidersAsync(enabled: true, cancellationToken);
 
         // Find providers that support real-time streaming by checking their capabilities
         var realtimeProviders = new List<Provider>();
@@ -176,7 +176,7 @@ public class RealTimeStreamingService : BackgroundService
                     await SendControlMessageAsync(provider.Slug, new StreamControlMessage(
                         StreamControlAction.Subscribe,
                         request.Symbol,
-                        request.Interval));
+                        request.Interval), cancellationToken);
                 }
             }
             else if (request.Action == SubscriptionAction.Unsubscribe)
@@ -193,7 +193,7 @@ public class RealTimeStreamingService : BackgroundService
                         await SendControlMessageAsync(provider.Slug, new StreamControlMessage(
                             StreamControlAction.Unsubscribe,
                             request.Symbol,
-                            request.Interval));
+                            request.Interval), cancellationToken);
 
                         _logger.LogDebug("Unsubscribed from {Key} on {Provider}",
                             subscriptionKey, provider.Slug);
@@ -267,7 +267,7 @@ public class RealTimeStreamingService : BackgroundService
                 context.CancellationSource.Token))
             {
                 // Broadcast to SignalR clients
-                await _broadcaster.BroadcastPriceUpdateAsync(data);
+                await _broadcaster.BroadcastPriceUpdateAsync(data, context.CancellationSource.Token);
 
                 _metrics.RecordDataQuery(data.Symbol, data.Interval, 1, 0, success: true);
             }
@@ -286,11 +286,11 @@ public class RealTimeStreamingService : BackgroundService
     /// <summary>
     /// Send a control message to a provider's stream.
     /// </summary>
-    private async Task SendControlMessageAsync(string providerSlug, StreamControlMessage message)
+    private async Task SendControlMessageAsync(string providerSlug, StreamControlMessage message, CancellationToken cancellationToken = default)
     {
         if (_providerStreams.TryGetValue(providerSlug, out var context))
         {
-            await context.ControlChannel.Writer.WriteAsync(message);
+            await context.ControlChannel.Writer.WriteAsync(message, cancellationToken);
         }
     }
 

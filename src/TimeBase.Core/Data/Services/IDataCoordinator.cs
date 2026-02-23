@@ -17,21 +17,22 @@ public interface IDataCoordinator
         string interval,
         DateTime start,
         DateTime end,
-        string providerSlug);
+        string providerSlug,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get available providers for a given symbol.
     /// This checks which providers have data for the requested symbol.
     /// </summary>
-    Task<List<Provider>> GetProvidersForSymbolAsync(string symbol);
+    Task<List<Provider>> GetProvidersForSymbolAsync(string symbol, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Store time series data in the database.
     /// </summary>
-    Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints);
+    Task<int> StoreTimeSeriesDataAsync(IEnumerable<TimeSeriesData> dataPoints, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get data summary/statistics for a symbol.
     /// </summary>
-    Task<DataSummary?> GetDataSummaryAsync(string symbol);
+    Task<DataSummary?> GetDataSummaryAsync(string symbol, CancellationToken cancellationToken = default);
 }
